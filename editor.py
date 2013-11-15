@@ -89,6 +89,7 @@ class Editor(QsciScintilla):
           ),
 
         's': lambda _: self.cmdLocateTuple,
+        'S': lambda _: self.cmdLocateTupleBackward,
         'd': (
           {
             'w': self.lexe('DeleteLineLeft'),
@@ -365,8 +366,37 @@ class Editor(QsciScintilla):
 
   # commands
 
-  def cmdLocateTuple(self):
-    pass
+  def cmdLocateTuple(self, ev):
+    c = ev.text()
+    def next(ev):
+      buf = create_string_buffer(bytes(c + ev.text(), "utf8"))
+      def f(_):
+        oldpos = self.send('sci_getcurrentpos')
+        self.exe('CharRight')
+        self.send('sci_searchanchor')
+        ret = self.send('sci_searchnext', 0, buf)
+        if ret == -1:
+          self.send('sci_setcurrentpos', oldpos)
+        else:
+          self.locateFunc = f
+      f(None)
+    return next
+
+  def cmdLocateTupleBackward(self, ev):
+    c = ev.text()
+    def next(ev):
+      buf = create_string_buffer(bytes(c + ev.text(), "utf8"))
+      def f(_):
+        oldpos = self.send('sci_getcurrentpos')
+        self.exe('CharLeft')
+        self.send('sci_searchanchor')
+        ret = self.send('sci_searchprev', 0, buf)
+        if ret == -1:
+          self.send('sci_setcurrentpos', oldpos)
+        else:
+          self.locateFunc = f
+      f(None)
+    return next
 
 def now():
   return int(round(time.time() * 1000))
