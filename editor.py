@@ -43,6 +43,8 @@ class Editor(QsciScintilla):
     self.setBackspaceUnindents(True)
 
     self.locateFunc = lambda _: None
+    self.n = 0
+
     self.commandModeKeys = {
         'q': (
           lambda _: self.modeSelectRectangle(),
@@ -202,6 +204,8 @@ class Editor(QsciScintilla):
     self.status = Status(self)
     self.status.show()
 
+    self.setupNCommands()
+
   def resizeEvent(self, ev):
     self.status.resize(ev.size())
     ev.accept()
@@ -271,11 +275,17 @@ class Editor(QsciScintilla):
     if callable(handle): # trigger a command
       self.resetKeys(self.commandModeKeys)
       ret = handle(ev)
-      if callable(ret):
+      if callable(ret): # more handle
         self.currentKeys = ret
         self.status.appendCommandText(ev.text())
-      else:
-        self.status.clearCommandText()
+      else: # final command
+        if ret != 'setN': # not prefix setting command
+          for n in range(0, self.n - 1): # do command n times
+            handle(ev)
+          self.n = 0
+          self.status.clearCommandText()
+        else: # show number prefix
+          self.status.appendCommandText(ev.text())
     elif isinstance(handle, dict): # is command prefix
       self.currentKeys = handle
       self.delayEvents.append((QKeyEvent(ev), now()))
@@ -382,6 +392,15 @@ class Editor(QsciScintilla):
     for i in range(0x20, 0x7F):
       handler[chr(i)] = makeLocator(chr(i))
     return handler
+
+  def setupNCommands(self):
+    def make(i):
+      def f(ev):
+        self.n = self.n * 10 + i
+        return 'setN'
+      return f
+    for i in range(0, 10):
+      self.commandModeKeys[str(i)] = make(i)
 
   # commands
 
