@@ -41,6 +41,7 @@ class Editor(QsciScintilla):
     self.setAutoIndent(True)
     self.setBackspaceUnindents(True)
 
+    self.locateFunc = None
     self.commandModeKeys = {
         'q': (
           self.modeSelectRectangle,
@@ -98,7 +99,8 @@ class Editor(QsciScintilla):
           self.lexe('SelectionCut', self.modeSelectNone),
           self.lexe('SelectionCut', self.modeSelectNone),
           ),
-        'f': self.play,
+        'f': self.makeCharLocators(),
+        'F': self.makeCharLocators(backward = True),
         'g': {
           'g': (
             self.lexe('DocumentStart'),
@@ -142,6 +144,7 @@ class Editor(QsciScintilla):
             self.lexe('CharRightExtend'),
             self.lexe('CharRightRectExtend'),
             ),
+        ';': lambda: self.locateFunc(),
 
         'z': self.lexe('VerticalCentreCaret'),
         'x': self.lexe('Delete'),
@@ -231,6 +234,8 @@ class Editor(QsciScintilla):
       super(QsciScintilla, self).keyPressEvent(ev)
 
   def handleCommandKey(self, ev):
+    if ev.key() == Qt.Key_Shift:
+      return super(QsciScintilla, self).keyPressEvent(ev)
     key = ev.text() if ev.key() >= 0x20 and ev.key() <= 0x7e else ev.key()
     handle = self.currentKeys.get(key, None)
     if isinstance(handle, tuple):
@@ -319,13 +324,39 @@ class Editor(QsciScintilla):
     self.select_mode = STREAM
     self.send("sci_setselectionmode", "sc_sel_lines")
 
-  def play(self):
-    n = 128
-    buf = create_string_buffer(n + 1)
-    self.send('sci_gettext', n, buf)
-    print(str(buf.value))
+  # factories
 
-    self.send('sci_settext', 4, c_char_p(b"foo"))
+  def makeCharLocators(self, backward = False):
+    handler = {}
+    def makeLocator(c):
+      c = create_string_buffer(bytes(c, "utf8"))
+      if backward:
+        def f():
+          oldpos = self.send('sci_getcurrentpos')
+          self.exe('CharLeft')
+          self.send('sci_searchanchor')
+          ret = self.send('sci_searchprev', self.base.SCFIND_MATCHCASE, c)
+          if ret == -1:
+            self.send('sci_setcurrentpos', oldpos)
+          else:
+            self.exe('VerticalCentreCaret')
+            self.locateFunc = f
+        return f
+      else:
+        def f():
+          oldpos = self.send('sci_getcurrentpos')
+          self.exe('CharRight')
+          self.send('sci_searchanchor')
+          ret = self.send('sci_searchnext', self.base.SCFIND_MATCHCASE, c)
+          if ret == -1:
+            self.send('sci_setcurrentpos', oldpos)
+          else:
+            self.exe('VerticalCentreCaret')
+            self.locateFunc = f
+        return f
+    for i in range(0x20, 0x7F):
+      handler[chr(i)] = makeLocator(chr(i))
+    return handler
 
 def now():
   return int(round(time.time() * 1000))
