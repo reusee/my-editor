@@ -130,7 +130,7 @@ class Editor(QsciScintilla):
             self.lexe('LineDownRectExtend'),
             ),
         'J': (
-            self.lexe('LineScrollDown'),
+            self.lexe('LineScrollUp'),
             self.lexe('MoveSelectedLinesDown'),
             self.lexe('MoveSelectedLinesDown'),
             ),
@@ -140,7 +140,7 @@ class Editor(QsciScintilla):
             self.lexe('LineUpRectExtend'),
             ),
         'K': (
-            self.lexe('LineScrollUp'),
+            self.lexe('LineScrollDown'),
             self.lexe('MoveSelectedLinesUp'),
             self.lexe('MoveSelectedLinesUp'),
             ),
@@ -347,18 +347,22 @@ class Editor(QsciScintilla):
 
   def modeSelectStream(self):
     self.select_mode = STREAM
+    self.send("sci_setcaretstyle", "caretstyle_line")
     self.send("sci_setselectionmode", "sc_sel_stream")
 
   def modeSelectNone(self):
     self.select_mode = NONE
+    self.send("sci_setcaretstyle", "caretstyle_block")
     self.send('sci_cancel')
 
   def modeSelectRectangle(self):
     self.select_mode = RECT
+    self.send("sci_setcaretstyle", "caretstyle_line")
     self.send("sci_setselectionmode", "sc_sel_rectangle")
 
   def modeSelectLine(self):
     self.select_mode = STREAM
+    self.send("sci_setcaretstyle", "caretstyle_line")
     self.send("sci_setselectionmode", "sc_sel_lines")
 
   # factories
@@ -370,12 +374,12 @@ class Editor(QsciScintilla):
       if backward:
         def f(_):
           oldpos = self.send('sci_getcurrentpos')
-          self.exe('CharLeft')
           self.send('sci_searchanchor')
           ret = self.send('sci_searchprev', self.base.SCFIND_MATCHCASE, c)
-          if ret == -1:
+          if ret == -1: # not found
             self.send('sci_setcurrentpos', oldpos)
           else:
+            self.exe('CharLeft')
             self.locateFunc = f
         return f
       else:
@@ -387,6 +391,7 @@ class Editor(QsciScintilla):
           if ret == -1:
             self.send('sci_setcurrentpos', oldpos)
           else:
+            self.exe('CharLeft')
             self.locateFunc = f
         return f
     for i in range(0x20, 0x7F):
@@ -416,6 +421,7 @@ class Editor(QsciScintilla):
         if ret == -1:
           self.send('sci_setcurrentpos', oldpos)
         else:
+          self.exe('CharLeft')
           self.locateFunc = f
       f(None)
     return next
@@ -432,6 +438,7 @@ class Editor(QsciScintilla):
         if ret == -1:
           self.send('sci_setcurrentpos', oldpos)
         else:
+          self.exe('CharLeft')
           self.locateFunc = f
       f(None)
     return next
