@@ -4,6 +4,7 @@ from PyQt4.QtGui import *
 import sys
 import time
 import os
+from ctypes import *
 
 EDIT, COMMAND = range(2)
 NONE, STREAM, RECT = range(3)
@@ -31,6 +32,14 @@ class Editor(QsciScintilla):
     self.setCaretLineVisible(True)
     self.setCaretLineBackgroundColor(QColor("#FFE4E4"))
     self.send("sci_sethscrollbar", 0)
+
+    # indent and tabs
+    self.setTabWidth(2)
+    self.setIndentationWidth(0)
+    self.setIndentationsUseTabs(False)
+    self.setIndentationGuides(True)
+    self.setAutoIndent(True)
+    self.setBackspaceUnindents(True)
 
     self.commandModeKeys = {
         'q': (
@@ -64,8 +73,8 @@ class Editor(QsciScintilla):
           self.lexe('PageUpRectExtend'),
           ),
         'i': self.modeEdit,
-        'o': self.lexe('LineEnd', 'Newline', self.modeEdit),
-        'O': self.lexe('Home', 'Newline', 'LineUp', self.modeEdit),
+        'o': self.lexe(self.beginUndoAction, 'LineEnd', 'Newline', self.modeEdit, self.endUndoAction),
+        'O': self.lexe(self.beginUndoAction, 'Home', 'Newline', 'LineUp', self.modeEdit, self.endUndoAction),
         'p': self.lexe('Paste'),
         '[': (
           self.lexe('ParaUp'),
@@ -89,7 +98,7 @@ class Editor(QsciScintilla):
           self.lexe('SelectionCut', self.modeSelectNone),
           self.lexe('SelectionCut', self.modeSelectNone),
           ),
-        'f': lambda: print(self.send("sci_searchintarget", len("import"), b'import')),
+        'f': self.play,
         'g': {
           'g': (
             self.lexe('DocumentStart'),
@@ -137,6 +146,9 @@ class Editor(QsciScintilla):
         'z': self.lexe('VerticalCentreCaret'),
         'x': self.lexe('Delete'),
         'X': self.lexe('DeleteBackNotLine'),
+        'c': {
+            'c': self.lexe(self.beginUndoAction, 'LineCut', 'Home', 'Newline', 'LineUp', self.modeEdit, self.endUndoAction),
+            },
         'v': self.modeSelectStream,
         'V': self.modeSelectLine,
         'M': (
@@ -167,6 +179,7 @@ class Editor(QsciScintilla):
         Qt.Key_Right: self.lexe('CharRight'),
         Qt.Key_Up: self.lexe('LineUp'),
         Qt.Key_Down: self.lexe('LineDown'),
+        Qt.Key_Tab: self.lexe('Tab'),
         }
 
     self.delayEvents = []
@@ -305,6 +318,14 @@ class Editor(QsciScintilla):
   def modeSelectLine(self):
     self.select_mode = STREAM
     self.send("sci_setselectionmode", "sc_sel_lines")
+
+  def play(self):
+    n = 128
+    buf = create_string_buffer(n + 1)
+    self.send('sci_gettext', n, buf)
+    print(str(buf.value))
+
+    self.send('sci_settext', 4, c_char_p(b"foo"))
 
 def now():
   return int(round(time.time() * 1000))
