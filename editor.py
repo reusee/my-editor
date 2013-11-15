@@ -17,12 +17,20 @@ class Editor(QsciScintilla):
     self.mode = COMMAND
     self.base = self.pool()
     self.select_mode = NONE
+    self.lexer = None
 
     self.setUtf8(True)
-    self.setFont(QFont("Terminus", 13))
+    self.font = QFont("Terminus", 13)
+    self.setFont(self.font)
     self.setCaretWidth(3)
     self.setCaretForegroundColor(QColor("green"))
     self.send("sci_setcaretperiod", -1)
+    self.setMarginWidth(0, 30)
+    self.setMarginLineNumbers(0, True)
+    self.setBraceMatching(QsciScintilla.SloppyBraceMatch)
+    self.setCaretLineVisible(True)
+    self.setCaretLineBackgroundColor(QColor("#FFE4E4"))
+    self.send("sci_sethscrollbar", 0)
 
     self.commandModeKeys = {
         'q': self.modeSelectRectangle,
@@ -252,6 +260,12 @@ class Editor(QsciScintilla):
       self.read(f)
     else:
       self.error("cannot open %s" % path)
+      return
+    if path.endswith('.py'):
+      self.lexer = QsciLexerPython()
+      self.lexer.setDefaultFont(self.font)
+      self.setLexer(self.lexer)
+      self.send("sci_stylesetfont", 1, b'Terminus')
 
   def error(self, msg):
     print(msg)
