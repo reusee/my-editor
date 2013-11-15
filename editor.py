@@ -6,7 +6,7 @@ import time
 import os
 
 EDIT, COMMAND = range(2)
-NORMAL, STREAM, RECT = range(3)
+NONE, STREAM, RECT = range(3)
 
 class Editor(QsciScintilla):
   def __init__(self):
@@ -16,7 +16,7 @@ class Editor(QsciScintilla):
     self.commands.clearKeys()
     self.mode = COMMAND
     self.base = self.pool()
-    self.select_mode = NORMAL
+    self.select_mode = NONE
 
     self.setUtf8(True)
     self.setFont(QFont("Terminus", 13))
@@ -25,7 +25,7 @@ class Editor(QsciScintilla):
     self.send("sci_setcaretperiod", -1)
 
     self.commandModeKeys = {
-        'q': self.cmdRectangleSelect,
+        'q': self.modeSelectRectangle,
         'w': (
           self.lexe('Home'),
           self.lexe('HomeExtend'),
@@ -42,8 +42,8 @@ class Editor(QsciScintilla):
             'p': self.lexe('LineDuplicate'),
             'x': self.lexe('LineTranspose'),
             },
-          self.lexe('SelectionCopy', self.cmdNormalSelect),
-          self.lexe('SelectionCopy', self.cmdNormalSelect),
+          self.lexe('SelectionCopy', self.modeSelectNone),
+          self.lexe('SelectionCopy', self.modeSelectNone),
           ),
         'u': self.lexe('Undo'),
         'U': (
@@ -51,9 +51,9 @@ class Editor(QsciScintilla):
           self.lexe('PageUpExtend'),
           self.lexe('PageUpRectExtend'),
           ),
-        'i': self.cmdInsert,
-        'o': self.lexe('LineEnd', 'Newline', self.cmdEditMode),
-        'O': self.lexe('Home', 'Newline', 'LineUp', self.cmdEditMode),
+        'i': self.modeEdit,
+        'o': self.lexe('LineEnd', 'Newline', self.modeEdit),
+        'O': self.lexe('Home', 'Newline', 'LineUp', self.modeEdit),
         'p': self.lexe('Paste'),
         '[': (
           self.lexe('ParaUp'),
@@ -74,8 +74,8 @@ class Editor(QsciScintilla):
             'h': self.lexe('DeleteWordLeft'),
             'l': self.lexe('DeleteWordRightEnd'),
             },
-          self.lexe('SelectionCut', self.cmdNormalSelect),
-          self.lexe('SelectionCut', self.cmdNormalSelect),
+          self.lexe('SelectionCut', self.modeSelectNone),
+          self.lexe('SelectionCut', self.modeSelectNone),
           ),
         'g': {
           'g': (
@@ -124,8 +124,8 @@ class Editor(QsciScintilla):
         'z': self.lexe('VerticalCentreCaret'),
         'x': self.lexe('Delete'),
         'X': self.lexe('DeleteBackNotLine'),
-        'v': self.cmdStreamSelect,
-        'V': self.cmdLinesSelect,
+        'v': self.modeSelectStream,
+        'V': self.modeSelectLine,
         'M': (
             self.lexe('PageDown'),
             self.lexe('PageDownExtend'),
@@ -139,10 +139,10 @@ class Editor(QsciScintilla):
 
     self.editModeKeys = {
         'k': {
-          'd': self.cmdCommandMode,
+          'd': self.modeCommand,
           },
 
-        Qt.Key_Escape: self.cmdCommandMode,
+        Qt.Key_Escape: self.modeCommand,
         Qt.Key_Return: self.lexe('Newline'),
         Qt.Key_Backspace: self.lexe('DeleteBackNotLine'),
         Qt.Key_Delete: self.lexe('Delete'),
@@ -160,7 +160,7 @@ class Editor(QsciScintilla):
     self.keyResetTimer = QTimer()
     self.keyResetTimer.timeout.connect(self.keyResetTimeout)
 
-    self.cmdCommandMode()
+    self.modeCommand()
 
   # keypress handler
 
@@ -183,7 +183,7 @@ class Editor(QsciScintilla):
     key = ev.text() if ev.key() >= 0x20 and ev.key() <= 0x7e else ev.key()
     handle = self.currentKeys.get(key, None)
     if isinstance(handle, tuple):
-      if self.select_mode == NORMAL:
+      if self.select_mode == NONE:
         handle = handle[0]
       elif self.select_mode == STREAM:
         handle = handle[1]
@@ -208,7 +208,7 @@ class Editor(QsciScintilla):
     key = ev.text() if ev.key() >= 0x20 and ev.key() <= 0x7e else ev.key()
     handle = self.currentKeys.get(key, None)
     if isinstance(handle, tuple):
-      if self.select_mode == NORMAL:
+      if self.select_mode == NONE:
         handle = handle[0]
       elif self.select_mode == STREAM:
         handle = handle[1]
@@ -256,37 +256,34 @@ class Editor(QsciScintilla):
   def error(self, msg):
     print(msg)
 
-  # commands
+  # modes
 
-  def cmdInsert(self):
-    self.cmdEditMode()
-
-  def cmdEditMode(self):
+  def modeEdit(self):
     self.mode = EDIT
     self.currentKeys = self.editModeKeys
     self.send("sci_setcaretstyle", "caretstyle_line")
 
-  def cmdCommandMode(self):
+  def modeCommand(self):
     self.mode = COMMAND
     self.currentKeys = self.commandModeKeys
     self.send("sci_setcaretstyle", "caretstyle_block")
 
-  def cmdStreamSelect(self):
+  def modeSelectStream(self):
     self.select_mode = STREAM
     self.send("sci_setselectionmode", "sc_sel_stream")
 
-  def cmdNormalSelect(self):
-    self.select_mode = NORMAL
+  def modeSelectNone(self):
+    self.select_mode = NONE
     if self.select_mode == RECT:
       self.send("sci_setemptyselection")
     else:
       self.send("sci_setselectionmode", 0)
 
-  def cmdRectangleSelect(self):
+  def modeSelectRectangle(self):
     self.select_mode = RECT #FIXME
     self.send("sci_setselectionmode", "sc_sel_rectangle")
 
-  def cmdLinesSelect(self):
+  def modeSelectLine(self):
     self.select_mode = STREAM
     self.send("sci_setselectionmode", "sc_sel_lines")
 
