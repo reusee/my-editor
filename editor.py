@@ -9,9 +9,16 @@ EDIT, COMMAND = range(2)
 class Editor(QsciScintilla):
   def __init__(self):
     super(QsciScintilla, self).__init__()
-    self.setUtf8(True)
+
     self.commands = self.standardCommands()
     self.mode = COMMAND
+    self.base = self.pool()
+
+    self.setUtf8(True)
+    self.setFont(QFont("Terminus", 13))
+    self.setCaretWidth(3)
+    self.setCaretForegroundColor(QColor("green"))
+    self.send("sci_setcaretperiod", -1)
 
     self.commandModeKeys = {
         'i': self.cmdInsert,
@@ -23,6 +30,11 @@ class Editor(QsciScintilla):
     self.editModeKeys = {
         'k': {
           'd': self.cmdCommandMode,
+          },
+        'j': {
+          'j': {
+            'j': lambda: print("jjj"),
+            },
           },
         }
 
@@ -59,7 +71,7 @@ class Editor(QsciScintilla):
       self.currentKeys = handle
       self.delayEvents.append((QKeyEvent(ev), now()))
       self.keyResetTimer.start(200)
-    else: # not a command, skip it
+    else:
       self.keyResetTimer.stop()
       for e in self.delayEvents: # pop all delay events
         super(QsciScintilla, self).keyPressEvent(e[0])
@@ -81,6 +93,12 @@ class Editor(QsciScintilla):
     for cmd in cmds:
       self.commands.find(cmd).execute()
 
+  def send(self, *args):
+    self.SendScintilla(*[
+      getattr(self.base, arg.upper()) if isinstance(arg, str) 
+      else arg 
+      for arg in args])
+
   # commands
 
   def cmdInsert(self):
@@ -89,10 +107,12 @@ class Editor(QsciScintilla):
   def cmdEditMode(self):
     self.mode = EDIT
     self.currentKeys = self.editModeKeys
+    self.send("sci_setcaretstyle", "caretstyle_line")
 
   def cmdCommandMode(self):
     self.mode = COMMAND
     self.currentKeys = self.commandModeKeys
+    self.send("sci_setcaretstyle", "caretstyle_block")
 
 def now():
   return int(round(time.time() * 1000))
