@@ -48,12 +48,12 @@ class Editor(QsciScintilla):
           lambda _: self.modeSelectNone(),
           lambda _: self.modeSelectNone(),
           ),
-        'w': (
+        'e': (
           self.lexe('Home'),
           self.lexe('HomeExtend'),
           self.lexe('HomeRectExtend'),
           ),
-        'e': (
+        'r': (
           self.lexe('LineEnd'), 
           self.lexe('LineEndExtend'), 
           self.lexe('LineEndRectExtend'),
@@ -92,8 +92,8 @@ class Editor(QsciScintilla):
         'S': lambda _: self.cmdLocateTupleBackward,
         'd': (
           {
-            'w': self.lexe('DeleteLineLeft'),
-            'e': self.lexe('DeleteLineRight'),
+            'e': self.lexe('DeleteLineLeft'),
+            'r': self.lexe('DeleteLineRight'),
             'd': self.lexe('LineCut'),
             'h': self.lexe('DeleteWordLeft'),
             'l': self.lexe('DeleteWordRightEnd'),
@@ -153,7 +153,12 @@ class Editor(QsciScintilla):
         'X': self.lexe('DeleteBackNotLine'),
         'c': {
             'c': self.lexe(self.beginUndoAction, 'LineCut', 'Home', 'Newline', 'LineUp', self.modeEdit, self.endUndoAction),
+            'e': self.lexe('DeleteLineLeft', self.modeEdit),
+            'r': self.lexe('DeleteLineRight', self.modeEdit),
+            'h': self.lexe('DeleteWordLeft', self.modeEdit),
+            'l': self.lexe('DeleteWordRightEnd', self.modeEdit),
             },
+        'C': self.lexe('DeleteLineRight', self.modeEdit),
         'v': lambda _: self.modeSelectStream(),
         'V': lambda _: self.modeSelectLine(),
         'M': (
@@ -319,13 +324,10 @@ class Editor(QsciScintilla):
 
   def modeSelectNone(self):
     self.select_mode = NONE
-    if self.select_mode == RECT:
-      self.send("sci_setemptyselection")
-    else:
-      self.send("sci_setselectionmode", 0)
+    self.send('sci_cancel')
 
   def modeSelectRectangle(self):
-    self.select_mode = RECT #TODO
+    self.select_mode = RECT
     self.send("sci_setselectionmode", "sc_sel_rectangle")
 
   def modeSelectLine(self):
