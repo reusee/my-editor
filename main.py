@@ -10,6 +10,8 @@ class MainWindow(QMainWindow):
         self.editor = Editor()
         self.setCentralWidget(self.editor)
 
+        self.editor.load(sys.argv[1])
+
 def main():
     app = QApplication(sys.argv)
     window = MainWindow()

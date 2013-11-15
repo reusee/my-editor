@@ -3,16 +3,20 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import sys
 import time
+import os
 
 EDIT, COMMAND = range(2)
+NORMAL, STREAM, RECT = range(3)
 
 class Editor(QsciScintilla):
   def __init__(self):
     super(QsciScintilla, self).__init__()
 
     self.commands = self.standardCommands()
+    self.commands.clearKeys()
     self.mode = COMMAND
     self.base = self.pool()
+    self.select_mode = NORMAL
 
     self.setUtf8(True)
     self.setFont(QFont("Terminus", 13))
@@ -21,21 +25,135 @@ class Editor(QsciScintilla):
     self.send("sci_setcaretperiod", -1)
 
     self.commandModeKeys = {
+        'q': self.cmdRectangleSelect,
+        'w': (
+          self.lexe('Home'),
+          self.lexe('HomeExtend'),
+          self.lexe('HomeRectExtend'),
+          ),
+        'e': (
+          self.lexe('LineEnd'), 
+          self.lexe('LineEndExtend'), 
+          self.lexe('LineEndRectExtend'),
+          ),
+        'y': (
+          {
+            'y': self.lexe('LineCopy'),
+            'p': self.lexe('LineDuplicate'),
+            'x': self.lexe('LineTranspose'),
+            },
+          self.lexe('SelectionCopy', self.cmdNormalSelect),
+          self.lexe('SelectionCopy', self.cmdNormalSelect),
+          ),
+        'u': self.lexe('Undo'),
+        'U': (
+          self.lexe('PageUp'),
+          self.lexe('PageUpExtend'),
+          self.lexe('PageUpRectExtend'),
+          ),
         'i': self.cmdInsert,
-        'j': {
-          'j': lambda: print("foo"),
-          }
+        'o': self.lexe('LineEnd', 'Newline', self.cmdEditMode),
+        'O': self.lexe('Home', 'Newline', 'LineUp', self.cmdEditMode),
+        'p': self.lexe('Paste'),
+        '[': (
+          self.lexe('ParaUp'),
+          self.lexe('ParaUpExtend'),
+          self.lexe('ParaUpExtend'),
+          ),
+        ']': (
+          self.lexe('ParaDown'),
+          self.lexe('ParaDownExtend'),
+          self.lexe('ParaDownExtend'),
+          ),
+
+        'd': (
+          {
+            'w': self.lexe('DeleteLineLeft'),
+            'e': self.lexe('DeleteLineRight'),
+            'd': self.lexe('LineCut'),
+            'h': self.lexe('DeleteWordLeft'),
+            'l': self.lexe('DeleteWordRightEnd'),
+            },
+          self.lexe('SelectionCut', self.cmdNormalSelect),
+          self.lexe('SelectionCut', self.cmdNormalSelect),
+          ),
+        'g': {
+          'g': (
+            self.lexe('DocumentStart'),
+            self.lexe('DocumentStartExtend'),
+            self.lexe('DocumentStartExtend'),
+            ),
+          'a': self.lexe('SelectAll'),
+          },
+        'G': (
+            self.lexe('DocumentEnd'),
+            self.lexe('DocumentEndExtend'),
+            self.lexe('DocumentEndExtend'),
+            ),
+        'h': (
+            self.lexe('CharLeft'),
+            self.lexe('CharLeftExtend'),
+            self.lexe('CharLeftRectExtend'),
+            ),
+        'j': (
+            self.lexe('LineDown'),
+            self.lexe('LineDownExtend'),
+            self.lexe('LineDownRectExtend'),
+            ),
+        'J': (
+            self.lexe('LineScrollDown'),
+            self.lexe('MoveSelectedLinesDown'),
+            self.lexe('MoveSelectedLinesDown'),
+            ),
+        'k': (
+            self.lexe('LineUp'),
+            self.lexe('LineUpExtend'),
+            self.lexe('LineUpRectExtend'),
+            ),
+        'K': (
+            self.lexe('LineScrollUp'),
+            self.lexe('MoveSelectedLinesUp'),
+            self.lexe('MoveSelectedLinesUp'),
+            ),
+        'l': (
+            self.lexe('CharRight'),
+            self.lexe('CharRightExtend'),
+            self.lexe('CharRightRectExtend'),
+            ),
+
+        'z': self.lexe('VerticalCentreCaret'),
+        'x': self.lexe('Delete'),
+        'X': self.lexe('DeleteBackNotLine'),
+        'v': self.cmdStreamSelect,
+        'V': self.cmdLinesSelect,
+        'M': (
+            self.lexe('PageDown'),
+            self.lexe('PageDownExtend'),
+            self.lexe('PageDownRectExtend'),
+            ),
+
+        ',': {
+          'q': sys.exit,
+          },
         }
 
     self.editModeKeys = {
         'k': {
           'd': self.cmdCommandMode,
           },
-        'j': {
-          'j': {
-            'j': lambda: print("jjj"),
-            },
-          },
+
+        Qt.Key_Escape: self.cmdCommandMode,
+        Qt.Key_Return: self.lexe('Newline'),
+        Qt.Key_Backspace: self.lexe('DeleteBackNotLine'),
+        Qt.Key_Delete: self.lexe('Delete'),
+        Qt.Key_Home: self.lexe('DocumentStart'),
+        Qt.Key_End: self.lexe('DocumentEnd'),
+        Qt.Key_PageUp: self.lexe('PageUp'),
+        Qt.Key_PageDown: self.lexe('PageDown'),
+        Qt.Key_Left: self.lexe('CharLeft'),
+        Qt.Key_Right: self.lexe('CharRight'),
+        Qt.Key_Up: self.lexe('LineUp'),
+        Qt.Key_Down: self.lexe('LineDown'),
         }
 
     self.delayEvents = []
@@ -62,7 +180,15 @@ class Editor(QsciScintilla):
     self.currentKeys = keys
 
   def handleEditKey(self, ev):
-    handle = self.currentKeys.get(ev.text(), None)
+    key = ev.text() if ev.key() >= 0x20 and ev.key() <= 0x7e else ev.key()
+    handle = self.currentKeys.get(key, None)
+    if isinstance(handle, tuple):
+      if self.select_mode == NORMAL:
+        handle = handle[0]
+      elif self.select_mode == STREAM:
+        handle = handle[1]
+      elif self.select_mode == RECT:
+        handle = handle[2]
     if callable(handle): # trigger a command
       self.keyResetTimer.stop()
       self.resetKeys(self.editModeKeys)
@@ -79,25 +205,56 @@ class Editor(QsciScintilla):
       super(QsciScintilla, self).keyPressEvent(ev)
 
   def handleCommandKey(self, ev):
-    handle = self.currentKeys.get(ev.text(), None)
+    key = ev.text() if ev.key() >= 0x20 and ev.key() <= 0x7e else ev.key()
+    handle = self.currentKeys.get(key, None)
+    if isinstance(handle, tuple):
+      if self.select_mode == NORMAL:
+        handle = handle[0]
+      elif self.select_mode == STREAM:
+        handle = handle[1]
+      elif self.select_mode == RECT:
+        handle = handle[2]
     if callable(handle): # trigger a command
       self.resetKeys(self.commandModeKeys)
       handle()
     elif isinstance(handle, dict): # is command prefix
       self.currentKeys = handle
       self.delayEvents.append((QKeyEvent(ev), now()))
+    else:
+      if isinstance(handle, str):
+        print('maybe wrong key binding', handle)
+      self.resetKeys(self.commandModeKeys)
 
   # utils
 
-  def execute(self, *cmds):
+  def exe(self, *cmds):
     for cmd in cmds:
-      self.commands.find(cmd).execute()
+      self.commands.find(getattr(QsciCommand, cmd)).execute()
+
+  def lexe(self, *cmds):
+    def f():
+      for cmd in cmds:
+        if isinstance(cmd, str):
+          self.exe(cmd)
+        else:
+          cmd()
+    return f
 
   def send(self, *args):
     self.SendScintilla(*[
       getattr(self.base, arg.upper()) if isinstance(arg, str) 
       else arg 
       for arg in args])
+
+  def load(self, path):
+    f = QFile(os.path.expanduser(path))
+    if f.open(QFile.ReadOnly):
+      self.read(f)
+    else:
+      self.error("cannot open %s" % path)
+
+  def error(self, msg):
+    print(msg)
 
   # commands
 
@@ -113,6 +270,25 @@ class Editor(QsciScintilla):
     self.mode = COMMAND
     self.currentKeys = self.commandModeKeys
     self.send("sci_setcaretstyle", "caretstyle_block")
+
+  def cmdStreamSelect(self):
+    self.select_mode = STREAM
+    self.send("sci_setselectionmode", "sc_sel_stream")
+
+  def cmdNormalSelect(self):
+    self.select_mode = NORMAL
+    if self.select_mode == RECT:
+      self.send("sci_setemptyselection")
+    else:
+      self.send("sci_setselectionmode", 0)
+
+  def cmdRectangleSelect(self):
+    self.select_mode = RECT #FIXME
+    self.send("sci_setselectionmode", "sc_sel_rectangle")
+
+  def cmdLinesSelect(self):
+    self.select_mode = STREAM
+    self.send("sci_setselectionmode", "sc_sel_lines")
 
 def now():
   return int(round(time.time() * 1000))
