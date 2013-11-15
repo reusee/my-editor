@@ -5,7 +5,7 @@ import sys
 
 from editor import *
 
-class MainWindow(QMainWindow):
+class Main(QMainWindow):
     def __init__(self):
         super(QMainWindow, self).__init__()
         self.editor = Editor()
@@ -15,7 +15,7 @@ class MainWindow(QMainWindow):
 
 def main():
     app = QApplication(sys.argv)
-    window = MainWindow()
+    window = Main()
     window.show()
     sys.exit(app.exec_())
 

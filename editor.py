@@ -5,6 +5,7 @@ import sys
 import time
 import os
 from ctypes import *
+from status import *
 
 EDIT, COMMAND = range(2)
 NONE, STREAM, RECT = range(3)
@@ -198,6 +199,13 @@ class Editor(QsciScintilla):
 
     self.modeCommand()
 
+    self.status = Status(self)
+    self.status.show()
+
+  def resizeEvent(self, ev):
+    self.status.resize(ev.size())
+    ev.accept()
+
   # keypress handler
 
   def keyPressEvent(self, ev):
@@ -243,6 +251,10 @@ class Editor(QsciScintilla):
   def handleCommandKey(self, ev):
     if ev.key() == Qt.Key_Shift:
       return super(QsciScintilla, self).keyPressEvent(ev)
+    elif ev.key() == Qt.Key_Escape:
+      self.resetKeys(self.commandModeKeys)
+      self.status.clearCommandText()
+      return
     handle = None
     if isinstance(self.currentKeys, dict):
       key = ev.text() if ev.key() >= 0x20 and ev.key() <= 0x7e else ev.key()
@@ -261,13 +273,18 @@ class Editor(QsciScintilla):
       ret = handle(ev)
       if callable(ret):
         self.currentKeys = ret
+        self.status.appendCommandText(ev.text())
+      else:
+        self.status.clearCommandText()
     elif isinstance(handle, dict): # is command prefix
       self.currentKeys = handle
       self.delayEvents.append((QKeyEvent(ev), now()))
+      self.status.appendCommandText(ev.text())
     else:
       if isinstance(handle, str):
         print('maybe wrong key binding', handle)
       self.resetKeys(self.commandModeKeys)
+      self.status.clearCommandText()
 
   # utils
 
