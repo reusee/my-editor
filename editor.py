@@ -41,12 +41,12 @@ class Editor(QsciScintilla):
     self.setAutoIndent(True)
     self.setBackspaceUnindents(True)
 
-    self.locateFunc = None
+    self.locateFunc = lambda _: None
     self.commandModeKeys = {
         'q': (
-          self.modeSelectRectangle,
-          self.modeSelectNone,
-          self.modeSelectNone,
+          lambda _: self.modeSelectRectangle(),
+          lambda _: self.modeSelectNone(),
+          lambda _: self.modeSelectNone(),
           ),
         'w': (
           self.lexe('Home'),
@@ -73,7 +73,7 @@ class Editor(QsciScintilla):
           self.lexe('PageUpExtend'),
           self.lexe('PageUpRectExtend'),
           ),
-        'i': self.modeEdit,
+        'i': lambda _: self.modeEdit(),
         'o': self.lexe(self.beginUndoAction, 'LineEnd', 'Newline', self.modeEdit, self.endUndoAction),
         'O': self.lexe(self.beginUndoAction, 'Home', 'Newline', 'LineUp', self.modeEdit, self.endUndoAction),
         'p': self.lexe('Paste'),
@@ -88,6 +88,7 @@ class Editor(QsciScintilla):
           self.lexe('ParaDownExtend'),
           ),
 
+        's': lambda _: self.cmdLocateTuple,
         'd': (
           {
             'w': self.lexe('DeleteLineLeft'),
@@ -144,7 +145,7 @@ class Editor(QsciScintilla):
             self.lexe('CharRightExtend'),
             self.lexe('CharRightRectExtend'),
             ),
-        ';': lambda: self.locateFunc(),
+        ';': lambda _: self.locateFunc(None),
 
         'z': self.lexe('VerticalCentreCaret'),
         'x': self.lexe('Delete'),
@@ -152,8 +153,8 @@ class Editor(QsciScintilla):
         'c': {
             'c': self.lexe(self.beginUndoAction, 'LineCut', 'Home', 'Newline', 'LineUp', self.modeEdit, self.endUndoAction),
             },
-        'v': self.modeSelectStream,
-        'V': self.modeSelectLine,
+        'v': lambda _: self.modeSelectStream(),
+        'V': lambda _: self.modeSelectLine(),
         'M': (
             self.lexe('PageDown'),
             self.lexe('PageDownExtend'),
@@ -161,16 +162,16 @@ class Editor(QsciScintilla):
             ),
 
         ',': {
-          'q': sys.exit,
+            'q': lambda _: sys.exit(),
           },
         }
 
     self.editModeKeys = {
         'k': {
-          'd': self.modeCommand,
+          'd': lambda _: self.modeCommand(),
           },
 
-        Qt.Key_Escape: self.modeCommand,
+        Qt.Key_Escape: lambda _: self.modeCommand(),
         Qt.Key_Return: self.lexe('Newline'),
         Qt.Key_Backspace: self.lexe('DeleteBackNotLine'),
         Qt.Key_Delete: self.lexe('Delete'),
@@ -221,7 +222,7 @@ class Editor(QsciScintilla):
     if callable(handle): # trigger a command
       self.keyResetTimer.stop()
       self.resetKeys(self.editModeKeys)
-      handle()
+      handle(ev)
     elif isinstance(handle, dict): # is command prefix
       self.currentKeys = handle
       self.delayEvents.append((QKeyEvent(ev), now()))
@@ -236,18 +237,24 @@ class Editor(QsciScintilla):
   def handleCommandKey(self, ev):
     if ev.key() == Qt.Key_Shift:
       return super(QsciScintilla, self).keyPressEvent(ev)
-    key = ev.text() if ev.key() >= 0x20 and ev.key() <= 0x7e else ev.key()
-    handle = self.currentKeys.get(key, None)
-    if isinstance(handle, tuple):
-      if self.select_mode == NONE:
-        handle = handle[0]
-      elif self.select_mode == STREAM:
-        handle = handle[1]
-      elif self.select_mode == RECT:
-        handle = handle[2]
+    handle = None
+    if isinstance(self.currentKeys, dict):
+      key = ev.text() if ev.key() >= 0x20 and ev.key() <= 0x7e else ev.key()
+      handle = self.currentKeys.get(key, None)
+      if isinstance(handle, tuple):
+        if self.select_mode == NONE:
+          handle = handle[0]
+        elif self.select_mode == STREAM:
+          handle = handle[1]
+        elif self.select_mode == RECT:
+          handle = handle[2]
+    elif callable(self.currentKeys):
+      handle = self.currentKeys
     if callable(handle): # trigger a command
       self.resetKeys(self.commandModeKeys)
-      handle()
+      ret = handle(ev)
+      if callable(ret):
+        self.currentKeys = ret
     elif isinstance(handle, dict): # is command prefix
       self.currentKeys = handle
       self.delayEvents.append((QKeyEvent(ev), now()))
@@ -263,7 +270,7 @@ class Editor(QsciScintilla):
       self.commands.find(getattr(QsciCommand, cmd)).execute()
 
   def lexe(self, *cmds):
-    def f():
+    def f(ev):
       for cmd in cmds:
         if isinstance(cmd, str):
           self.exe(cmd)
@@ -331,7 +338,7 @@ class Editor(QsciScintilla):
     def makeLocator(c):
       c = create_string_buffer(bytes(c, "utf8"))
       if backward:
-        def f():
+        def f(_):
           oldpos = self.send('sci_getcurrentpos')
           self.exe('CharLeft')
           self.send('sci_searchanchor')
@@ -339,11 +346,10 @@ class Editor(QsciScintilla):
           if ret == -1:
             self.send('sci_setcurrentpos', oldpos)
           else:
-            self.exe('VerticalCentreCaret')
             self.locateFunc = f
         return f
       else:
-        def f():
+        def f(_):
           oldpos = self.send('sci_getcurrentpos')
           self.exe('CharRight')
           self.send('sci_searchanchor')
@@ -351,12 +357,16 @@ class Editor(QsciScintilla):
           if ret == -1:
             self.send('sci_setcurrentpos', oldpos)
           else:
-            self.exe('VerticalCentreCaret')
             self.locateFunc = f
         return f
     for i in range(0x20, 0x7F):
       handler[chr(i)] = makeLocator(chr(i))
     return handler
+
+  # commands
+
+  def cmdLocateTuple(self):
+    pass
 
 def now():
   return int(round(time.time() * 1000))
