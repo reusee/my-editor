@@ -33,7 +33,11 @@ class Editor(QsciScintilla):
     self.send("sci_sethscrollbar", 0)
 
     self.commandModeKeys = {
-        'q': self.modeSelectRectangle,
+        'q': (
+          self.modeSelectRectangle,
+          self.modeSelectNone,
+          self.modeSelectNone,
+          ),
         'w': (
           self.lexe('Home'),
           self.lexe('HomeExtend'),
@@ -85,6 +89,7 @@ class Editor(QsciScintilla):
           self.lexe('SelectionCut', self.modeSelectNone),
           self.lexe('SelectionCut', self.modeSelectNone),
           ),
+        'f': lambda: print(self.send("sci_searchintarget", len("import"), b'import')),
         'g': {
           'g': (
             self.lexe('DocumentStart'),
@@ -249,7 +254,7 @@ class Editor(QsciScintilla):
     return f
 
   def send(self, *args):
-    self.SendScintilla(*[
+    return self.SendScintilla(*[
       getattr(self.base, arg.upper()) if isinstance(arg, str) 
       else arg 
       for arg in args])
@@ -267,7 +272,7 @@ class Editor(QsciScintilla):
       self.setLexer(self.lexer)
       self.send("sci_stylesetfont", 1, b'Terminus')
 
-  def error(self, msg):
+  def error(self, msg): #TODO
     print(msg)
 
   # modes
@@ -294,7 +299,7 @@ class Editor(QsciScintilla):
       self.send("sci_setselectionmode", 0)
 
   def modeSelectRectangle(self):
-    self.select_mode = RECT #FIXME
+    self.select_mode = RECT #TODO
     self.send("sci_setselectionmode", "sc_sel_rectangle")
 
   def modeSelectLine(self):
