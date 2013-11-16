@@ -380,6 +380,7 @@ class Editor(QsciScintilla):
             self.send('sci_setcurrentpos', oldpos)
           else:
             self.exe('CharLeft')
+            self.send('sci_scrollcaret')
             self.locateFunc = f
         return f
       else:
@@ -392,6 +393,7 @@ class Editor(QsciScintilla):
             self.send('sci_setcurrentpos', oldpos)
           else:
             self.exe('CharLeft')
+            self.send('sci_scrollcaret')
             self.locateFunc = f
         return f
     for i in range(0x20, 0x7F):
@@ -422,6 +424,7 @@ class Editor(QsciScintilla):
           self.send('sci_setcurrentpos', oldpos)
         else:
           self.exe('CharLeft')
+          self.send('sci_scrollcaret')
           self.locateFunc = f
       f(None)
     return next
@@ -439,6 +442,7 @@ class Editor(QsciScintilla):
           self.send('sci_setcurrentpos', oldpos)
         else:
           self.exe('CharLeft')
+          self.send('sci_scrollcaret')
           self.locateFunc = f
       f(None)
     return next
