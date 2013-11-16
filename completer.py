@@ -7,7 +7,29 @@ class Completer(QWidget):
     self.incoming = []
     self.words = set()
     self.candidates = set()
-    self.callback = None
+    self.editor = parent
+
+    self.model = QStringListModel()
+    self.view = QListView(parent)
+    self.view.setModel(self.model)
+    self.view.setAttribute(Qt.WA_TransparentForMouseEvents)
+    self.view.hide()
+
+    self.editor.notify.connect(self.textChanged)
+    self.editor.enterEditMode.connect(self.enterEditMode)
+    self.editor.leaveEditMode.connect(self.leaveEditMode)
+
+  def textChanged(self, position, modType, text, length, linesAdded, line, foldLevelNow, foldLevelPrev, token, annotationLinesAdded):
+    if modType & self.editor.base.SC_MOD_INSERTTEXT:
+      print('insert', 'pos:', position, 'len:', length, 'lines:', linesAdded, 'text:', text)
+    elif modType & self.editor.base.SC_MOD_DELETETEXT:
+      print('delete', 'pos:', position, 'len:', length, 'lines:', linesAdded, 'text:', text)
+
+  def enterEditMode(self):
+    print('enterEditMode')
+
+  def leaveEditMode(self):
+    print('leaveEditMode')
 
   def feed(self, c):
     if c.isalpha() or c.isdigit(): # inside a word
@@ -27,13 +49,11 @@ class Completer(QWidget):
         self.words.add(word)
       self.incoming.clear()
       self.candidates.clear()
-    if self.callback:
-      self.callback(sorted(self.candidates, key = lambda w: len(w)))
-
-  def feedString(self, s): # todo
-    for c in s:
-      self.feed(c)
-
-  def paintEvent(self, ev):
-    print('ok')
-    pass
+    candidates = sorted(self.candidates, key = lambda w: len(w))[:10]
+    if len(candidates) > 0:
+      self.model.setStringList(candidates)
+      x, y = self.editor.caretXY()
+      self.view.move(x, y + self.editor.lineHeight())
+      self.view.show()
+    else:
+      self.view.hide()

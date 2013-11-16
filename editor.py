@@ -1,10 +1,12 @@
 from PyQt4.Qsci import *
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+
 import sys
 import time
 import os
 from ctypes import *
+
 from status import *
 from completer import *
 
@@ -12,6 +14,16 @@ EDIT, COMMAND = range(2)
 NONE, STREAM, RECT = range(3)
 
 class Editor(QsciScintilla):
+
+  enterEditMode = pyqtSignal()
+  leaveEditMode = pyqtSignal()
+  notify = pyqtSignal(int, int, object, int, int, int, int, int, int, int)
+  resizeSignal = pyqtSignal(QResizeEvent)
+  cancelCommand = pyqtSignal()
+  commandPrefix = pyqtSignal(str)
+  commandRunned = pyqtSignal()
+  commandInvalid = pyqtSignal()
+
   def __init__(self):
     super(QsciScintilla, self).__init__()
 
@@ -209,8 +221,10 @@ class Editor(QsciScintilla):
 
     self.setupNCommands()
 
+    self.base.SCN_MODIFIED.connect(lambda *args: self.notify.emit(*args))
+
   def resizeEvent(self, ev):
-    self.status.resize(ev.size())
+    self.resizeSignal.emit(ev)
     ev.accept()
 
   # keypress handler
@@ -260,7 +274,7 @@ class Editor(QsciScintilla):
       return super(QsciScintilla, self).keyPressEvent(ev)
     elif ev.key() == Qt.Key_Escape:
       self.resetKeys(self.commandModeKeys)
-      self.status.clearCommandText()
+      self.cancelCommand.emit()
       return
     handle = None
     if isinstance(self.currentKeys, dict):
@@ -280,24 +294,24 @@ class Editor(QsciScintilla):
       ret = handle(ev)
       if callable(ret): # more handle
         self.currentKeys = ret
-        self.status.appendCommandText(ev.text())
+        self.commandPrefix.emit(ev.text())
       else: # final command
         if ret != 'setN': # not prefix setting command
           for n in range(0, self.n - 1): # do command n times
             handle(ev)
           self.n = 0
-          self.status.clearCommandText()
+          self.commandRunned.emit()
         else: # show number prefix
-          self.status.appendCommandText(ev.text())
+          self.commandPrefix.emit(ev.text())
     elif isinstance(handle, dict): # is command prefix
       self.currentKeys = handle
       self.delayEvents.append((QKeyEvent(ev), now()))
-      self.status.appendCommandText(ev.text())
+      self.commandPrefix.emit(ev.text())
     else:
       if isinstance(handle, str):
         print('maybe wrong key binding', handle)
       self.resetKeys(self.commandModeKeys)
-      self.status.clearCommandText()
+      self.commandInvalid.emit()
 
   # utils
 
@@ -354,11 +368,13 @@ class Editor(QsciScintilla):
     self.mode = EDIT
     self.currentKeys = self.editModeKeys
     self.send("sci_setcaretstyle", "caretstyle_line")
+    self.enterEditMode.emit()
 
   def modeCommand(self):
     self.mode = COMMAND
     self.currentKeys = self.commandModeKeys
     self.send("sci_setcaretstyle", "caretstyle_block")
+    self.leaveEditMode.emit()
 
   def modeSelectStream(self):
     self.selectMode = STREAM
@@ -462,8 +478,8 @@ class Editor(QsciScintilla):
       f(None)
     return next
 
-  def isWordChar(c:
-      return c.isalpha() or c.isdigit() or c == '-'
+  def isWordChar(c):
+    return c.isalpha() or c.isdigit() or c == '-'
 
 def now():
   return int(round(time.time() * 1000))

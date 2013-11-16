@@ -9,6 +9,12 @@ class Status(QWidget):
     self.setAttribute(Qt.WA_TransparentForMouseEvents)
     self.commandText = ""
 
+    parent.resizeSignal.connect(lambda ev: self.resize(ev.size()))
+    parent.cancelCommand.connect(self.clearCommandText)
+    parent.commandPrefix.connect(lambda t: self.appendCommandText(t))
+    parent.commandRunned.connect(self.clearCommandText)
+    parent.commandInvalid.connect(self.clearCommandText)
+
   def paintEvent(self, ev):
     painter = QPainter(self)
     painter.setRenderHint(QPainter.Antialiasing)
