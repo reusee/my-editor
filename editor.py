@@ -6,6 +6,7 @@ import time
 import os
 from ctypes import *
 from status import *
+from completer import *
 
 EDIT, COMMAND = range(2)
 NONE, STREAM, RECT = range(3)
@@ -33,6 +34,7 @@ class Editor(QsciScintilla):
     self.setCaretLineVisible(True)
     self.setCaretLineBackgroundColor(QColor("#FFE4E4"))
     self.send("sci_sethscrollbar", 0)
+    self.send('sci_setmousedowncaptures', 0)
 
     # indent and tabs
     self.setTabWidth(2)
@@ -41,6 +43,11 @@ class Editor(QsciScintilla):
     self.setIndentationGuides(True)
     self.setAutoIndent(True)
     self.setBackspaceUnindents(True)
+
+    # child widgets
+    self.status = Status(self)
+    self.completer = Completer(self)
+    self.base.SCN_CHARADDED.connect(lambda c: self.completer.feed(chr(c)))
 
     self.locateFunc = lambda _: None
     self.n = 0
@@ -201,13 +208,11 @@ class Editor(QsciScintilla):
 
     self.modeCommand()
 
-    self.status = Status(self)
-    self.status.show()
-
     self.setupNCommands()
 
   def resizeEvent(self, ev):
     self.status.resize(ev.size())
+    self.completer.resize(ev.size())
     ev.accept()
 
   # keypress handler
@@ -224,7 +229,7 @@ class Editor(QsciScintilla):
     self.resetKeys(self.editModeKeys)
 
   def resetKeys(self, keys):
-    self.delayEvents = []
+    self.delayEvents.clear()
     self.currentKeys = keys
 
   def handleEditKey(self, ev):
@@ -324,11 +329,15 @@ class Editor(QsciScintilla):
     else:
       self.error("cannot open %s" % path)
       return
-    if path.endswith('.py'):
+
+    if path.endswith('.py'): # lexer
       self.lexer = QsciLexerPython()
       self.lexer.setDefaultFont(self.font)
       self.setLexer(self.lexer)
       self.send("sci_stylesetfont", 1, b'Terminus')
+
+    self.completer.feedString(self.text())
+    self.completer.callback = self.completerCallback
 
   def error(self, msg): #TODO
     print(msg)
@@ -344,6 +353,7 @@ class Editor(QsciScintilla):
     self.mode = COMMAND
     self.currentKeys = self.commandModeKeys
     self.send("sci_setcaretstyle", "caretstyle_block")
+    self.completer.feed('')
 
   def modeSelectStream(self):
     self.select_mode = STREAM
@@ -446,6 +456,9 @@ class Editor(QsciScintilla):
           self.locateFunc = f
       f(None)
     return next
+
+  def completerCallback(self, candidates):
+    print(candidates)
 
 def now():
   return int(round(time.time() * 1000))
