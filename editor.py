@@ -19,7 +19,7 @@ class Editor(QsciScintilla):
     self.commands.clearKeys()
     self.mode = COMMAND
     self.base = self.pool()
-    self.select_mode = NONE
+    self.selectMode = NONE
     self.lexer = None
 
     self.setUtf8(True)
@@ -47,7 +47,6 @@ class Editor(QsciScintilla):
     # child widgets
     self.status = Status(self)
     self.completer = Completer(self)
-    self.base.SCN_CHARADDED.connect(lambda c: self.completer.feed(chr(c)))
 
     self.locateFunc = lambda _: None
     self.n = 0
@@ -212,7 +211,6 @@ class Editor(QsciScintilla):
 
   def resizeEvent(self, ev):
     self.status.resize(ev.size())
-    self.completer.resize(ev.size())
     ev.accept()
 
   # keypress handler
@@ -236,11 +234,11 @@ class Editor(QsciScintilla):
     key = ev.text() if ev.key() >= 0x20 and ev.key() <= 0x7e else ev.key()
     handle = self.currentKeys.get(key, None)
     if isinstance(handle, tuple):
-      if self.select_mode == NONE:
+      if self.selectMode == NONE:
         handle = handle[0]
-      elif self.select_mode == STREAM:
+      elif self.selectMode == STREAM:
         handle = handle[1]
-      elif self.select_mode == RECT:
+      elif self.selectMmode == RECT:
         handle = handle[2]
     if callable(handle): # trigger a command
       self.keyResetTimer.stop()
@@ -269,11 +267,11 @@ class Editor(QsciScintilla):
       key = ev.text() if ev.key() >= 0x20 and ev.key() <= 0x7e else ev.key()
       handle = self.currentKeys.get(key, None)
       if isinstance(handle, tuple):
-        if self.select_mode == NONE:
+        if self.selectMode == NONE:
           handle = handle[0]
-        elif self.select_mode == STREAM:
+        elif self.selectMode == STREAM:
           handle = handle[1]
-        elif self.select_mode == RECT:
+        elif self.selectMode == RECT:
           handle = handle[2]
     elif callable(self.currentKeys):
       handle = self.currentKeys
@@ -336,11 +334,19 @@ class Editor(QsciScintilla):
       self.setLexer(self.lexer)
       self.send("sci_stylesetfont", 1, b'Terminus')
 
-    self.completer.feedString(self.text())
-    self.completer.callback = self.completerCallback
-
   def error(self, msg): #TODO
     print(msg)
+
+  def getPos(self):
+    return self.send('sci_getcurrentpos')
+
+  def caretXY(self):
+    currentPosition = self.getPos()
+    return (self.send('sci_pointxfromposition', 0, currentPosition),
+        self.send('sci_pointyfromposition', 0, currentPosition))
+
+  def lineHeight(self):
+    return self.send('sci_textheight')
 
   # modes
 
@@ -353,25 +359,24 @@ class Editor(QsciScintilla):
     self.mode = COMMAND
     self.currentKeys = self.commandModeKeys
     self.send("sci_setcaretstyle", "caretstyle_block")
-    self.completer.feed('')
 
   def modeSelectStream(self):
-    self.select_mode = STREAM
+    self.selectMode = STREAM
     self.send("sci_setcaretstyle", "caretstyle_line")
     self.send("sci_setselectionmode", "sc_sel_stream")
 
   def modeSelectNone(self):
-    self.select_mode = NONE
+    self.selectMode = NONE
     self.send("sci_setcaretstyle", "caretstyle_block")
     self.send('sci_cancel')
 
   def modeSelectRectangle(self):
-    self.select_mode = RECT
+    self.selectMode = RECT
     self.send("sci_setcaretstyle", "caretstyle_line")
     self.send("sci_setselectionmode", "sc_sel_rectangle")
 
   def modeSelectLine(self):
-    self.select_mode = STREAM
+    self.selectMode = STREAM
     self.send("sci_setcaretstyle", "caretstyle_line")
     self.send("sci_setselectionmode", "sc_sel_lines")
 
@@ -383,7 +388,7 @@ class Editor(QsciScintilla):
       c = create_string_buffer(bytes(c, "utf8"))
       if backward:
         def f(_):
-          oldpos = self.send('sci_getcurrentpos')
+          oldpos = self.getPos()
           self.send('sci_searchanchor')
           ret = self.send('sci_searchprev', self.base.SCFIND_MATCHCASE, c)
           if ret == -1: # not found
@@ -395,7 +400,7 @@ class Editor(QsciScintilla):
         return f
       else:
         def f(_):
-          oldpos = self.send('sci_getcurrentpos')
+          oldpos = self.getPos()
           self.exe('CharRight')
           self.send('sci_searchanchor')
           ret = self.send('sci_searchnext', self.base.SCFIND_MATCHCASE, c)
@@ -426,7 +431,7 @@ class Editor(QsciScintilla):
     def next(ev):
       buf = create_string_buffer(bytes(c + ev.text(), "utf8"))
       def f(_):
-        oldpos = self.send('sci_getcurrentpos')
+        oldpos = self.getPos()
         self.exe('CharRight')
         self.send('sci_searchanchor')
         ret = self.send('sci_searchnext', 0, buf)
@@ -444,7 +449,7 @@ class Editor(QsciScintilla):
     def next(ev):
       buf = create_string_buffer(bytes(c + ev.text(), "utf8"))
       def f(_):
-        oldpos = self.send('sci_getcurrentpos')
+        oldpos = self.getPos()
         self.exe('CharLeft')
         self.send('sci_searchanchor')
         ret = self.send('sci_searchprev', 0, buf)
@@ -457,8 +462,8 @@ class Editor(QsciScintilla):
       f(None)
     return next
 
-  def completerCallback(self, candidates):
-    print(candidates)
+  def isWordChar(c:
+      return c.isalpha() or c.isdigit() or c == '-'
 
 def now():
   return int(round(time.time() * 1000))
