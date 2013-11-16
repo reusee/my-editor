@@ -9,8 +9,8 @@ class Status(QWidget):
     self.setAttribute(Qt.WA_TransparentForMouseEvents)
     self.commandText = ""
 
-    parent.resizeSignal.connect(lambda ev: self.resize(ev.size()))
-    parent.cancelCommand.connect(self.clearCommandText)
+    parent.resized.connect(lambda ev: self.resize(ev.size()))
+    parent.commandCanceled.connect(self.clearCommandText)
     parent.commandPrefix.connect(lambda t: self.appendCommandText(t))
     parent.commandRunned.connect(self.clearCommandText)
     parent.commandInvalid.connect(self.clearCommandText)

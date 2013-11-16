@@ -15,9 +15,9 @@ class Completer(QWidget):
     self.view.setAttribute(Qt.WA_TransparentForMouseEvents)
     self.view.hide()
 
-    self.editor.notify.connect(self.textChanged)
-    self.editor.enterEditMode.connect(self.enterEditMode)
-    self.editor.leaveEditMode.connect(self.leaveEditMode)
+    self.editor.modified.connect(self.textChanged)
+    self.editor.editModeEntered.connect(self.editModeEntered)
+    self.editor.editModeLeaved.connect(self.editModeLeaved)
 
   def textChanged(self, position, modType, text, length, linesAdded, line, foldLevelNow, foldLevelPrev, token, annotationLinesAdded):
     if modType & self.editor.base.SC_MOD_INSERTTEXT:
@@ -25,11 +25,11 @@ class Completer(QWidget):
     elif modType & self.editor.base.SC_MOD_DELETETEXT:
       print('delete', 'pos:', position, 'len:', length, 'lines:', linesAdded, 'text:', text)
 
-  def enterEditMode(self):
+  def editModeEntered(self):
     print('enterEditMode')
 
-  def leaveEditMode(self):
-    print('leaveEditMode')
+  def editModeLeaved(self):
+    print('editModeLeaved')
 
   def feed(self, c):
     if c.isalpha() or c.isdigit(): # inside a word

@@ -15,11 +15,14 @@ NONE, STREAM, RECT = range(3)
 
 class Editor(QsciScintilla):
 
-  enterEditMode = pyqtSignal()
-  leaveEditMode = pyqtSignal()
-  notify = pyqtSignal(int, int, object, int, int, int, int, int, int, int)
-  resizeSignal = pyqtSignal(QResizeEvent)
-  cancelCommand = pyqtSignal()
+  editModeEntered = pyqtSignal()
+  editModeLeaved = pyqtSignal()
+
+  modified = pyqtSignal(int, int, object, int, int, int, int, int, int, int)
+
+  resized = pyqtSignal(QResizeEvent)
+
+  commandCanceled = pyqtSignal()
   commandPrefix = pyqtSignal(str)
   commandRunned = pyqtSignal()
   commandInvalid = pyqtSignal()
@@ -221,10 +224,10 @@ class Editor(QsciScintilla):
 
     self.setupNCommands()
 
-    self.base.SCN_MODIFIED.connect(lambda *args: self.notify.emit(*args))
+    self.base.SCN_MODIFIED.connect(lambda *args: self.modified.emit(*args))
 
   def resizeEvent(self, ev):
-    self.resizeSignal.emit(ev)
+    self.resized.emit(ev)
     ev.accept()
 
   # keypress handler
@@ -274,7 +277,7 @@ class Editor(QsciScintilla):
       return super(QsciScintilla, self).keyPressEvent(ev)
     elif ev.key() == Qt.Key_Escape:
       self.resetKeys(self.commandModeKeys)
-      self.cancelCommand.emit()
+      self.commandCanceled.emit()
       return
     handle = None
     if isinstance(self.currentKeys, dict):
@@ -368,13 +371,13 @@ class Editor(QsciScintilla):
     self.mode = EDIT
     self.currentKeys = self.editModeKeys
     self.send("sci_setcaretstyle", "caretstyle_line")
-    self.enterEditMode.emit()
+    self.editModeEntered.emit()
 
   def modeCommand(self):
     self.mode = COMMAND
     self.currentKeys = self.commandModeKeys
     self.send("sci_setcaretstyle", "caretstyle_block")
-    self.leaveEditMode.emit()
+    self.editModeLeaved.emit()
 
   def modeSelectStream(self):
     self.selectMode = STREAM
