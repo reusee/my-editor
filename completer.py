@@ -38,8 +38,8 @@ class Completer(QWidget):
     if text: text = text.decode('utf8')
     if self.editor.mode == self.editor.EDIT:
       if modType & self.editor.base.SC_MOD_INSERTTEXT: # insert by edit
-        assert len(text) == 1 # typing
         if self.isWordChar(text): # a word char
+          assert len(text) == 1 # typing
           assert not self.currentRange is None
           if self.currentRange.index != -1: # a dirty range
             self.newRange(position + 1)
@@ -48,7 +48,7 @@ class Completer(QWidget):
         else: # not a word char
           if not self.currentRange is None: # end of a word
             self.collectCurrentRange()
-            self.newRange(position + 1)
+            self.newRange(position + len(text))
       elif modType & self.editor.base.SC_MOD_DELETETEXT: # delete by edit
         self.newRange(self.editor.getPos())
     elif self.editor.mode == self.editor.COMMAND:

@@ -186,7 +186,7 @@ class Editor(QsciScintilla):
     elif isinstance(handle, dict): # is command prefix
       self.currentKeys = handle
       self.delayEvents.append((QKeyEvent(ev), now()))
-      self.keyResetTimer.start(200)
+      self.keyResetTimer.start(100)
     else:
       self.keyResetTimer.stop()
       for e in self.delayEvents: # pop all delay events
