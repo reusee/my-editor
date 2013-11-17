@@ -140,7 +140,7 @@ class Editor(QsciScintilla):
         Qt.Key_Right: self.lexe('CharRight'),
         Qt.Key_Up: self.lexe('LineUp'),
         Qt.Key_Down: self.lexe('LineDown'),
-        Qt.Key_Tab: self.lexe('Tab'),
+        Qt.Key_Tab: lambda _: self.completer.completeNext(),
         }
 
     self.modeCommand()

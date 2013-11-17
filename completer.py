@@ -22,12 +22,17 @@ class Completer(QWidget):
     self.partial = []
     self.partialStartPos = 0
     self.candidates = set()
+    self.showing = []
+    self.index = -1
+    self.completing = False
+    self.lastTargetEnd = 0
 
     self.editor.modified.connect(self.textChanged)
     self.editor.editModeEntered.connect(self.editModeEntered)
     self.editor.editModeLeaved.connect(self.editModeLeaved)
 
   def textChanged(self, position, modType, text, length, linesAdded, _line, _foldLevelNow, _foldLevelPrev, _token, _annotationLinesAdded):
+    if self.completing: return # ignore notification when doing completing
     if text: text = text.decode('utf8')
     if modType & self.editor.base.SC_MOD_INSERTTEXT and self.editor.mode == self.editor.COMMAND: # not by typing
       self.words.update(set(self.wordPattern.findall(text)))
@@ -42,21 +47,24 @@ class Completer(QWidget):
       self.clearHint()
     elif modType & self.editor.base.SC_MOD_DELETETEXT and self.editor.mode == self.editor.EDIT: # delete edit
       self.reHint(self.editor.getPos())
+    self.showCandidates()
 
+  def showCandidates(self):
     if self.editor.mode == self.editor.EDIT: # show candidates
       partial = ''.join(self.partial)
-      words = sorted(self.candidates, key = lambda w: (
+      self.showing = sorted(self.candidates, key = lambda w: (
         not w.startswith(partial),
         len(w),
         ))[:10]
-      if len(words) > 0:
-        self.model.setStringList(words)
-        self.view.resize(300, self.view.lineHeight * (1 + len(words)))
+      if len(self.showing) > 0:
+        self.model.setStringList(self.showing)
+        self.view.resize(300, self.view.lineHeight * (1 + len(self.showing)))
+        self.view.setCurrentIndex(self.model.index(self.index, 0))
         self.view.show()
         x, y = self.editor.getCaretPos(self.partialStartPos)
         self.view.move(x, y + self.editor.getLineHeight())
       else:
-        self.view.hide()
+        self.clearHint()
 
   def feedPartialChar(self, c, pos):
     lowerC = c.lower()
@@ -75,7 +83,11 @@ class Completer(QWidget):
 
   def clearHint(self):
     self.partial.clear()
+    self.partialStartPos = 0
     self.candidates.clear()
+    self.showing.clear()
+    self.index = -1
+    self.lastTargetEnd = 0
     self.view.hide()
 
   def reHint(self, caretPos):
@@ -83,7 +95,7 @@ class Completer(QWidget):
     startPos = caretPos - MAX_WORD_LENGTH
     if startPos < 0: startPos = 0
     self.editor.send('sci_gettextrange', startPos, caretPos, self.buf)
-    left = self.buf.decode('utf8')[:caretPos - startPos]
+    left = self.buf[:caretPos - startPos].decode('utf8')
     partial = self.partialPattern.findall(left)
     partialStartPos = caretPos - len(partial)
     if len(partial) > 0:
@@ -96,6 +108,7 @@ class Completer(QWidget):
 
   def editModeEntered(self):
     self.reHint(self.editor.getPos())
+    self.showCandidates()
 
   def editModeLeaved(self):
     self.collectWord()
@@ -115,11 +128,36 @@ class Completer(QWidget):
         sI += 1
     return keyI == len(key)
 
+  def completeNext(self):
+    self.completing = True
+    buf = None
+    end = None
+    if self.index == len(self.showing) - 1: # restore partial
+      buf = ''.join(self.partial).encode('utf8')
+      end = self.lastTargetEnd
+      self.index = -1
+    else:
+      self.index += 1
+      buf = self.showing[self.index].encode('utf8')
+      if self.index == 0: # first completing
+        print('here')
+        end = self.partialStartPos + len(self.partial) - 1
+        self.lastTargetEnd = self.partialStartPos + len(buf) - 1
+      else: # not first
+        end = self.lastTargetEnd
+        self.lastTargetEnd = self.partialStartPos + len(buf) - 1
+    self.editor.send('sci_settargetstart', self.partialStartPos - 1)
+    self.editor.send('sci_settargetend', end)
+    self.editor.send('sci_replacetarget', len(buf), buf)
+    for i in range(len(buf)): self.editor.send('sci_charright')
+    self.completing = False
+
 class View(QListView):
   def __init__(self, parent):
     super(QListView, self).__init__(parent)
     self.setAttribute(Qt.WA_TransparentForMouseEvents)
     self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    self.setSelectionBehavior(self.SelectRows)
     self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
     self.hide()
     self.setStyleSheet('''
@@ -130,6 +168,11 @@ class View(QListView):
       color: #FFF;
       font-weight: bold;
       padding: 10px;
+    }
+    QListView::item:selected {
+      background-color: rgba(32, 32, 32, 90%);
+      border-radius: 5px;
+      color: #FFF;
     }
     ''')
     self.setFont(QFont('Terminus', 18))
