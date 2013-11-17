@@ -11,10 +11,10 @@ from status import *
 from completer import *
 from configure import *
 
-EDIT, COMMAND = range(2)
-NONE, STREAM, RECT = range(3)
-
 class Editor(QsciScintilla):
+
+  EDIT, COMMAND = range(2)
+  NONE, STREAM, RECT = range(3)
 
   editModeEntered = pyqtSignal()
   editModeLeaved = pyqtSignal()
@@ -32,9 +32,9 @@ class Editor(QsciScintilla):
     super(QsciScintilla, self).__init__()
 
     self.commands = self.standardCommands() 
-    self.mode = COMMAND
+    self.mode = self.COMMAND
     self.base = self.pool()
-    self.selectMode = NONE
+    self.selectMode = self.NONE
     self.lexer = None
     self.status = Status(self)
     self.completer = Completer(self)
@@ -152,9 +152,9 @@ class Editor(QsciScintilla):
   # keypress handler
 
   def keyPressEvent(self, ev):
-    if self.mode == EDIT:
+    if self.mode == self.EDIT:
       self.handleEditKey(ev)
-    elif self.mode == COMMAND:
+    elif self.mode == self.COMMAND:
       self.handleCommandKey(ev)
 
   def keyResetTimeout(self):
@@ -170,11 +170,11 @@ class Editor(QsciScintilla):
     key = ev.text() if ev.key() >= 0x20 and ev.key() <= 0x7e else ev.key()
     handle = self.currentKeys.get(key, None)
     if isinstance(handle, tuple):
-      if self.selectMode == NONE:
+      if self.selectMode == self.NONE:
         handle = handle[0]
-      elif self.selectMode == STREAM:
+      elif self.selectMode == self.STREAM:
         handle = handle[1]
-      elif self.selectMmode == RECT:
+      elif self.selectMmode == self.RECT:
         handle = handle[2]
     if callable(handle): # trigger a command
       self.keyResetTimer.stop()
@@ -203,11 +203,11 @@ class Editor(QsciScintilla):
       key = ev.text() if ev.key() >= 0x20 and ev.key() <= 0x7e else ev.key()
       handle = self.currentKeys.get(key, None)
       if isinstance(handle, tuple): # tuple command
-        if self.selectMode == NONE:
+        if self.selectMode == self.NONE:
           handle = handle[0]
-        elif self.selectMode == STREAM:
+        elif self.selectMode == self.STREAM:
           handle = handle[1]
-        elif self.selectMode == RECT:
+        elif self.selectMode == self.RECT:
           handle = handle[2]
     elif callable(self.currentKeys): # function handler
       handle = self.currentKeys
@@ -272,45 +272,44 @@ class Editor(QsciScintilla):
   def getPos(self):
     return self.send('sci_getcurrentpos')
 
-  def caretXY(self):
-    currentPosition = self.getPos()
-    return (self.send('sci_pointxfromposition', 0, currentPosition),
-        self.send('sci_pointyfromposition', 0, currentPosition))
+  def getCaretPos(self, pos):
+    return (self.send('sci_pointxfromposition', 0, pos),
+        self.send('sci_pointyfromposition', 0, pos))
 
-  def lineHeight(self):
+  def getLineHeight(self):
     return self.send('sci_textheight')
 
   # modes
 
   def modeEdit(self):
-    self.mode = EDIT
+    self.mode = self.EDIT
     self.currentKeys = self.editModeKeys
     self.send("sci_setcaretstyle", "caretstyle_line")
     self.editModeEntered.emit()
 
   def modeCommand(self):
-    self.mode = COMMAND
+    self.mode = self.COMMAND
     self.currentKeys = self.commandModeKeys
     self.send("sci_setcaretstyle", "caretstyle_block")
     self.editModeLeaved.emit()
 
   def modeSelectStream(self):
-    self.selectMode = STREAM
+    self.selectMode = self.STREAM
     self.send("sci_setcaretstyle", "caretstyle_line")
     self.send("sci_setselectionmode", "sc_sel_stream")
 
   def modeSelectNone(self):
-    self.selectMode = NONE
+    self.selectMode = self.NONE
     self.send("sci_setcaretstyle", "caretstyle_block")
     self.send('sci_cancel')
 
   def modeSelectRectangle(self):
-    self.selectMode = RECT
+    self.selectMode = self.RECT
     self.send("sci_setcaretstyle", "caretstyle_line")
     self.send("sci_setselectionmode", "sc_sel_rectangle")
 
   def modeSelectLine(self):
-    self.selectMode = STREAM
+    self.selectMode = self.STREAM
     self.send("sci_setcaretstyle", "caretstyle_line")
     self.send("sci_setselectionmode", "sc_sel_lines")
 
