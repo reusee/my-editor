@@ -15,19 +15,8 @@ class Completer(QWidget):
     self.editor = parent
 
     self.model = QStringListModel()
-    self.view = QListView(parent)
+    self.view = View(parent)
     self.view.setModel(self.model)
-    self.view.setAttribute(Qt.WA_TransparentForMouseEvents)
-    self.view.hide()
-    self.view.setStyleSheet('''
-    QListView {
-      border: 0;
-      background-color: rgba(32, 32, 32, 75%);
-      color: #FFF;
-      font-size: 24px;
-      padding: 10px;
-    }
-    ''')
 
     self.words = set()
     self.partial = []
@@ -55,13 +44,17 @@ class Completer(QWidget):
       self.reHint(self.editor.getPos())
 
     if self.editor.mode == self.editor.EDIT: # show candidates
-      words = sorted(self.candidates, key = lambda w: len(w))[:6]
+      partial = ''.join(self.partial)
+      words = sorted(self.candidates, key = lambda w: (
+        not w.startswith(partial),
+        len(w),
+        ))[:10]
       if len(words) > 0:
         self.model.setStringList(words)
+        self.view.resize(300, self.view.lineHeight * (1 + len(words)))
         self.view.show()
         x, y = self.editor.getCaretPos(self.partialStartPos)
-        y += self.editor.getLineHeight()
-        self.view.move(x, y)
+        self.view.move(x, y + self.editor.getLineHeight())
       else:
         self.view.hide()
 
@@ -77,7 +70,7 @@ class Completer(QWidget):
     else:
       self.candidates.difference_update({word
         for word in self.candidates
-        if not self.fuzzyMatch(''.join(self.partial), word.lower())
+        if not self.fuzzyMatch(''.join(self.partial).lower(), word.lower())
         })
 
   def clearHint(self):
@@ -121,3 +114,25 @@ class Completer(QWidget):
       else:
         sI += 1
     return keyI == len(key)
+
+class View(QListView):
+  def __init__(self, parent):
+    super(QListView, self).__init__(parent)
+    self.setAttribute(Qt.WA_TransparentForMouseEvents)
+    self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    self.hide()
+    self.setStyleSheet('''
+    QListView {
+      border: 0;
+      border-radius: 20px;
+      background-color: rgba(32, 32, 32, 80%);
+      color: #FFF;
+      font-weight: bold;
+      padding: 10px;
+    }
+    ''')
+    self.setFont(QFont('Terminus', 18))
+    metric = QFontMetrics(self.font())
+    rect = metric.boundingRect('foo')
+    self.lineHeight = rect.height()
