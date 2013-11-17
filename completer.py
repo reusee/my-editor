@@ -19,6 +19,15 @@ class Completer(QWidget):
     self.view.setModel(self.model)
     self.view.setAttribute(Qt.WA_TransparentForMouseEvents)
     self.view.hide()
+    self.view.setStyleSheet('''
+    QListView {
+      border: 0;
+      background-color: rgba(32, 32, 32, 75%);
+      color: #FFF;
+      font-size: 24px;
+      padding: 10px;
+    }
+    ''')
 
     self.words = set()
     self.partial = []
@@ -46,7 +55,7 @@ class Completer(QWidget):
       self.reHint(self.editor.getPos())
 
     if self.editor.mode == self.editor.EDIT: # show candidates
-      words = sorted(self.candidates, key = lambda w: len(w))[:10]
+      words = sorted(self.candidates, key = lambda w: len(w))[:6]
       if len(words) > 0:
         self.model.setStringList(words)
         self.view.show()
