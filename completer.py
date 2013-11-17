@@ -5,10 +5,9 @@ import re
 MAX_WORD_LENGTH = 256
 
 class Completer(QWidget):
-
-  wordPattern = re.compile(r'[a-zA-Z0-9][a-zA-Z0-9-]*')
-  partialPattern = re.compile(r'[a-zA-Z0-9][a-zA-Z0-9-]*\Z')
   buf = bytearray(MAX_WORD_LENGTH)
+  prefixPattern = re.compile(r'[a-zA-Z0-9][a-zA-Z0-9-]*\Z')
+  wordPattern = re.compile(r'[a-zA-Z0-9][a-zA-Z0-9-]*')
 
   def __init__(self, parent):
     super(QWidget, self).__init__(parent)
@@ -19,105 +18,150 @@ class Completer(QWidget):
     self.view.setModel(self.model)
 
     self.words = set()
-    self.partial = []
-    self.partialStartPos = 0
-    self.candidates = set()
-    self.showing = []
-    self.index = -1
+    self.currentRange = None
     self.completing = False
-    self.lastTargetEnd = 0
 
-    self.editor.modified.connect(self.textChanged)
     self.editor.editModeEntered.connect(self.editModeEntered)
     self.editor.editModeLeaved.connect(self.editModeLeaved)
-
-  def textChanged(self, position, modType, text, length, linesAdded, _line, _foldLevelNow, _foldLevelPrev, _token, _annotationLinesAdded):
-    if self.completing: return # ignore notification when doing completing
-    if text: text = text.decode('utf8')
-    if modType & self.editor.base.SC_MOD_INSERTTEXT and self.editor.mode == self.editor.COMMAND: # not by typing
-      self.words.update(set(self.wordPattern.findall(text)))
-    elif modType & self.editor.base.SC_MOD_INSERTTEXT and self.editor.mode == self.editor.EDIT: # typing in
-      assert len(text) == 1
-      if self.isWordChar(text): # is a word char
-        self.feedPartialChar(text, self.editor.getPos() + 1)
-      else:  # not a word char
-        self.collectWord()
-        self.reHint(self.editor.getPos() + 1)
-    elif modType & self.editor.base.SC_MOD_DELETETEXT and self.editor.mode == self.editor.COMMAND: # delete command
-      self.clearHint()
-    elif modType & self.editor.base.SC_MOD_DELETETEXT and self.editor.mode == self.editor.EDIT: # delete edit
-      self.reHint(self.editor.getPos())
-    self.showCandidates()
-
-  def showCandidates(self):
-    if self.editor.mode == self.editor.EDIT: # show candidates
-      partial = ''.join(self.partial)
-      self.showing = sorted(self.candidates, key = lambda w: (
-        not w.startswith(partial),
-        len(w),
-        ))[:10]
-      if len(self.showing) > 0:
-        self.model.setStringList(self.showing)
-        self.view.resize(300, self.view.lineHeight * (1 + len(self.showing)))
-        self.view.setCurrentIndex(self.model.index(self.index, 0))
-        self.view.show()
-        x, y = self.editor.getCaretPos(self.partialStartPos)
-        self.view.move(x, y + self.editor.getLineHeight())
-      else:
-        self.clearHint()
-
-  def feedPartialChar(self, c, pos):
-    lowerC = c.lower()
-    self.partial.append(c)
-    if len(self.partial) == 1: # first char
-      self.candidates = {word
-          for word in self.words
-          if word[0].lower() == lowerC
-          }
-      self.partialStartPos = pos
-    else:
-      self.candidates.difference_update({word
-        for word in self.candidates
-        if not self.fuzzyMatch(''.join(self.partial).lower(), word.lower())
-        })
-
-  def clearHint(self):
-    self.partial.clear()
-    self.partialStartPos = 0
-    self.candidates.clear()
-    self.showing.clear()
-    self.index = -1
-    self.lastTargetEnd = 0
-    self.view.hide()
-
-  def reHint(self, caretPos):
-    self.clearHint()
-    startPos = caretPos - MAX_WORD_LENGTH
-    if startPos < 0: startPos = 0
-    self.editor.send('sci_gettextrange', startPos, caretPos, self.buf)
-    left = self.buf[:caretPos - startPos].decode('utf8')
-    partial = self.partialPattern.findall(left)
-    partialStartPos = caretPos - len(partial)
-    if len(partial) > 0:
-      for i, c in enumerate(partial[0]): 
-        self.feedPartialChar(c, partialStartPos + i)
-
-  def collectWord(self):
-    word = ''.join(self.partial)
-    if word: self.words.add(word)
+    self.editor.modified.connect(self.textChanged)
 
   def editModeEntered(self):
-    self.reHint(self.editor.getPos())
-    self.showCandidates()
+    self.newRange(self.editor.getPos())
 
   def editModeLeaved(self):
-    self.collectWord()
-    self.clearHint()
+    self.collectCurrentRange()
+    self.view.hide()
+    self.currentRange = None
+
+  def textChanged(self, position, modType, text, length, linesAdded, _line, _foldLevelNow, _foldLevelPrev, _token, _annotationLinesAdded):
+    if self.completing: return
+    if text: text = text.decode('utf8')
+    if self.editor.mode == self.editor.EDIT:
+      if modType & self.editor.base.SC_MOD_INSERTTEXT: # insert by edit
+        assert len(text) == 1 # typing
+        if self.isWordChar(text): # a word char
+          assert not self.currentRange is None
+          if self.currentRange.index != -1: # a dirty range
+            self.newRange(position + 1)
+          else: # good range
+            self.currentRange.feed(text, position)
+        else: # not a word char
+          if not self.currentRange is None: # end of a word
+            self.collectCurrentRange()
+            self.newRange(position + 1)
+      elif modType & self.editor.base.SC_MOD_DELETETEXT: # delete by edit
+        self.newRange(self.editor.getPos())
+    elif self.editor.mode == self.editor.COMMAND:
+      if modType & self.editor.base.SC_MOD_INSERTTEXT: # insert by command
+        self.words.update( # update word dict
+            set(self.wordPattern.findall(text)))
+
+  def collectCurrentRange(self):
+    if not self.currentRange is None:
+      word = ''.join(self.currentRange.chars)
+      if word == '': return
+      print('WORD:', word)
+      self.words.add(word)
+
+  def rangeChanged(self):
+    self.currentRange.dump()
+    if self.editor.mode == self.editor.EDIT:
+      if self.currentRange:
+        words = self.currentRange.showing
+        if len(words) > 0:
+          self.model.setStringList(words)
+          self.view.resize(300, self.view.lineHeight * (1 + len(words)))
+          self.view.setCurrentIndex(self.model.index(self.currentRange.index))
+          self.view.show()
+          x, y = self.editor.getCaretPos(self.currentRange.startPos)
+          self.view.move(x, y + self.editor.getLineHeight())
+          return
+    self.view.hide()
 
   def isWordChar(self, c):
     return c.isalpha() or c.isdigit() or c == '-'
 
+  def newRange(self, pos):
+    start = pos - MAX_WORD_LENGTH
+    if start < 0: start = 0
+    self.editor.send('sci_gettextrange', start, pos, self.buf)
+    left = self.buf[:pos - start].decode('utf8')
+    prefix = self.prefixPattern.findall(left)
+    r = Range(self.editor, self.words, pos, pos)
+    if len(prefix) > 0:
+      prefix = prefix[0]
+      start = pos - len(prefix)
+      r.startPos = start
+      r.endPos = start
+      for i, c in enumerate(prefix):
+        r.feed(c, start + i)
+    r.changed.connect(self.rangeChanged)
+    self.currentRange = r
+    self.rangeChanged()
+
+  def completeNext(self):
+    self.completing = True
+    if self.currentRange.index == -1:
+      self.currentRange.showing.append( # add current chars to showing
+          ''.join(self.currentRange.chars))
+    self.currentRange.index += 1
+    if self.currentRange.index == len(self.currentRange.showing):
+      self.currentRange.index = 0
+    replace = self.currentRange.showing[self.currentRange.index]
+    replace = replace.encode('utf8')
+    self.editor.send('sci_settargetstart', self.currentRange.startPos)
+    self.editor.send('sci_settargetend', self.currentRange.endPos)
+    self.editor.send('sci_replacetarget', len(replace), replace)
+    for i in range(len(replace)): self.editor.send('sci_charright')
+    self.currentRange.endPos = self.currentRange.startPos + len(replace)
+    self.rangeChanged()
+    self.completing = False
+
+class Range(QObject):
+  changed = pyqtSignal()
+
+  def __init__(self, editor, words, startPos, endPos):
+    super(QObject, self).__init__()
+    self.words = words
+    self.editor = editor
+
+    self.startPos = startPos # start position of document
+    self.endPos = endPos # end position of document
+    self.chars = [] # user entered chars
+    self.candidates = set() # word candidates
+    self.showing = [] # showing candidates
+    self.index = -1 # selected candidate index
+
+  def dump(self):
+    print('Range:', '%d-%d' % (self.startPos, self.endPos), ''.join(self.chars))
+    for c in self.showing:
+      print('\t', c)
+
+  def feed(self, c, pos):
+    assert pos == self.endPos
+    self.endPos += 1
+    self.chars.append(c)
+    lowerC = c.lower()
+    prefix = ''.join(self.chars)
+    if len(self.chars) == 1: # first char of a word
+      self.candidates = {word
+          for word in self.words
+          if word[0].lower() == lowerC and word != prefix
+          }
+    else:
+      self.candidates.difference_update({word
+        for word in self.candidates
+        if not self.fuzzyMatch(prefix.lower(), word.lower()) or (word == prefix)
+        })
+    self.showing = sorted(self.candidates, key = lambda w: (
+      not w.startswith(prefix),
+      len(w),
+      ))
+    self.index = -1
+    self.changed.emit()
+
   def fuzzyMatch(self, key, s):
+    if key == s: return False
     keyI = 0
     sI = 0
     while keyI < len(key) and sI < len(s):
@@ -127,30 +171,6 @@ class Completer(QWidget):
       else:
         sI += 1
     return keyI == len(key)
-
-  def completeNext(self):
-    self.completing = True
-    buf = None
-    end = None
-    if self.index == len(self.showing) - 1: # restore partial
-      buf = ''.join(self.partial).encode('utf8')
-      end = self.lastTargetEnd
-      self.index = -1
-    else:
-      self.index += 1
-      buf = self.showing[self.index].encode('utf8')
-      if self.index == 0: # first completing
-        print('here')
-        end = self.partialStartPos + len(self.partial) - 1
-        self.lastTargetEnd = self.partialStartPos + len(buf) - 1
-      else: # not first
-        end = self.lastTargetEnd
-        self.lastTargetEnd = self.partialStartPos + len(buf) - 1
-    self.editor.send('sci_settargetstart', self.partialStartPos - 1)
-    self.editor.send('sci_settargetend', end)
-    self.editor.send('sci_replacetarget', len(buf), buf)
-    for i in range(len(buf)): self.editor.send('sci_charright')
-    self.completing = False
 
 class View(QListView):
   def __init__(self, parent):
