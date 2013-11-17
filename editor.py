@@ -53,11 +53,7 @@ class Editor(QsciScintilla):
     self.setFont(self.font)
 
     self.commandModeKeys = {
-        'q': (
-          lambda _: self.modeSelectRectangle(),
-          lambda _: self.modeSelectNone(),
-          lambda _: self.modeSelectNone(),
-          ),
+        'q': (self.lexe(self.modeSelectRectangle), self.lexe(self.modeSelectNone), self.lexe(self.modeSelectNone)),
         'e': (self.lexe('Home'), self.lexe('HomeExtend'), self.lexe('HomeRectExtend')),
         'r': (self.lexe('LineEnd'), self.lexe('LineEndExtend'), self.lexe('LineEndRectExtend')),
         'y': (
@@ -67,7 +63,7 @@ class Editor(QsciScintilla):
           ),
         'u': self.lexe('Undo'),
         'U': (self.lexe('PageUp'), self.lexe('PageUpExtend'), self.lexe('PageUpRectExtend')),
-        'i': lambda _: self.modeEdit(),
+        'i': self.lexe(self.modeEdit),
         'I': self.lexe('Home', self.modeEdit),
         'o': self.lexe(self.beginUndoAction, 'LineEnd', 'Newline', self.modeEdit, self.endUndoAction),
         'O': self.lexe(self.beginUndoAction, 'Home', 'Newline', 'LineUp', self.modeEdit, self.endUndoAction),
@@ -116,22 +112,22 @@ class Editor(QsciScintilla):
             'l': self.lexe('DeleteWordRightEnd', self.modeEdit),
             },
         'C': self.lexe('DeleteLineRight', self.modeEdit),
-        'v': lambda _: self.modeSelectStream(),
-        'V': lambda _: self.modeSelectLine(),
+        'v': self.lexe(self.modeSelectStream),
+        'V': self.lexe(self.modeSelectLine),
         'M': (self.lexe('PageDown'), self.lexe('PageDownExtend'), self.lexe('PageDownRectExtend')),
 
         ',': {
-            'q': lambda _: sys.exit(),
+            'q': self.lexe(sys.exit),
           },
         }
     self.setupNCommands()
 
     self.editModeKeys = {
         'k': {
-          'd': lambda _: self.modeCommand(),
+          'd': self.lexe(self.modeCommand),
           },
 
-        Qt.Key_Escape: lambda _: self.modeCommand(),
+        Qt.Key_Escape: self.lexe(self.modeCommand),
         Qt.Key_Return: self.lexe('Newline'),
         Qt.Key_Backspace: self.lexe('DeleteBackNotLine'),
         Qt.Key_Delete: self.lexe('Delete'),
@@ -143,7 +139,7 @@ class Editor(QsciScintilla):
         Qt.Key_Right: self.lexe('CharRight'),
         Qt.Key_Up: self.lexe('LineUp'),
         Qt.Key_Down: self.lexe('LineDown'),
-        Qt.Key_Tab: lambda _: self.completer.completeNext(),
+        Qt.Key_Tab: self.lexe(self.completer.completeNext),
         }
 
     self.modeCommand()
@@ -245,7 +241,12 @@ class Editor(QsciScintilla):
   def lexe(self, *cmds):
     def f(ev):
       for cmd in cmds:
-        self.exe(cmd) if isinstance(cmd, str) else cmd()
+        if isinstance(cmd, str):
+          self.exe(cmd)
+        elif isinstance(cmd, tuple):
+          cmd[0](*cmd[1:])
+        else:
+          cmd()
     return f
 
   def send(self, *args):
