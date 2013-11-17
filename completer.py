@@ -6,8 +6,8 @@ MAX_WORD_LENGTH = 256
 
 class Completer(QWidget):
   buf = bytearray(MAX_WORD_LENGTH)
-  prefixPattern = re.compile(r'[a-zA-Z0-9][a-zA-Z0-9-]*\Z')
-  wordPattern = re.compile(r'[a-zA-Z0-9][a-zA-Z0-9-]*')
+  prefixPattern = re.compile(r'[a-zA-Z0-9_][a-zA-Z0-9-_]*\Z')
+  wordPattern = re.compile(r'[a-zA-Z0-9_][a-zA-Z0-9-_]*')
 
   def __init__(self, parent):
     super(QWidget, self).__init__(parent)
@@ -68,7 +68,7 @@ class Completer(QWidget):
         words = self.currentRange.showing
         if len(words) > 0:
           self.model.setStringList(words)
-          self.view.resize(300, self.view.lineHeight * (1 + len(words)))
+          self.view.resize(300, self.view.lineHeight * (2 + len(words)))
           self.view.setCurrentIndex(self.model.index(self.currentRange.index))
           self.view.show()
           x, y = self.editor.getCaretPos(self.currentRange.startPos)
@@ -77,7 +77,7 @@ class Completer(QWidget):
     self.view.hide()
 
   def isWordChar(self, c):
-    return c.isalpha() or c.isdigit() or c == '-'
+    return c.isalpha() or c.isdigit() or c in {'-', '_'}
 
   def newRange(self, pos):
     start = pos - MAX_WORD_LENGTH
@@ -182,18 +182,18 @@ class View(QListView):
     QListView {
       border: 0;
       border-radius: 20px;
-      background-color: rgba(32, 32, 32, 80%);
+      background-color: rgba(32, 32, 32, 70%);
       color: #FFF;
       font-weight: bold;
       padding: 10px;
     }
     QListView::item:selected {
-      background-color: rgba(32, 32, 32, 90%);
-      border-radius: 5px;
-      color: #FFF;
+      background-color: rgba(0, 0, 0, 0%);
+      color: #0F0;
+      font-weight: bold;
     }
     ''')
-    self.setFont(QFont('Terminus', 18))
+    self.setFont(QFont('Terminus', 13))
     metric = QFontMetrics(self.font())
     rect = metric.boundingRect('foo')
     self.lineHeight = rect.height()
