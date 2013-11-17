@@ -68,12 +68,15 @@ class Editor(QsciScintilla):
         'u': self.lexe('Undo'),
         'U': (self.lexe('PageUp'), self.lexe('PageUpExtend'), self.lexe('PageUpRectExtend')),
         'i': lambda _: self.modeEdit(),
+        'I': self.lexe('Home', self.modeEdit),
         'o': self.lexe(self.beginUndoAction, 'LineEnd', 'Newline', self.modeEdit, self.endUndoAction),
         'O': self.lexe(self.beginUndoAction, 'Home', 'Newline', 'LineUp', self.modeEdit, self.endUndoAction),
         'p': self.lexe('Paste'),
         '[': (self.lexe('ParaUp'), self.lexe('ParaUpExtend'), self.lexe('ParaUpExtend')),
         ']': (self.lexe('ParaDown'), self.lexe('ParaDownExtend'), self.lexe('ParaDownExtend')),
 
+        'a': self.lexe('CharRight', self.modeEdit),
+        'A': self.lexe('LineEnd', self.modeEdit),
         's': lambda _: self.locateDoubleChars,
         'S': lambda _: self.locateDoubleCharsBackward,
         'd': (

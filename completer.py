@@ -60,11 +60,9 @@ class Completer(QWidget):
     if not self.currentRange is None:
       word = ''.join(self.currentRange.chars)
       if word == '': return
-      print('WORD:', word)
       self.words.add(word)
 
   def rangeChanged(self):
-    self.currentRange.dump()
     if self.editor.mode == self.editor.EDIT:
       if self.currentRange:
         words = self.currentRange.showing
