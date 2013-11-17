@@ -113,7 +113,6 @@ class Editor(QsciScintilla):
             },
         'C': self.lexe('DeleteLineRight', self.modeEdit),
         'v': self.lexe(self.modeSelectStream),
-        'V': self.lexe(self.modeSelectLine),
         'M': (self.lexe('PageDown'), self.lexe('PageDownExtend'), self.lexe('PageDownRectExtend')),
 
         ',': {
@@ -311,11 +310,6 @@ class Editor(QsciScintilla):
     self.selectMode = self.RECT
     self.send("sci_setcaretstyle", "caretstyle_line")
     self.send("sci_setselectionmode", "sc_sel_rectangle")
-
-  def modeSelectLine(self):
-    self.selectMode = self.STREAM
-    self.send("sci_setcaretstyle", "caretstyle_line")
-    self.send("sci_setselectionmode", "sc_sel_lines")
 
   # commands
 
