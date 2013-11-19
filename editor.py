@@ -77,8 +77,8 @@ class Editor(QsciScintilla):
 
         'a': self.lexe('CharRight', self.modeEdit),
         'A': self.lexe('LineEnd', self.modeEdit),
-        's': lambda _: self.locateByTwoChars(),
-        'S': lambda _: self.locateBackwardByTwoChars(),
+        's': lambda _: self.locateByTwoChars,
+        'S': lambda _: self.locateBackwardByTwoChars,
         'd': (
           {
             'e': self.lexe('DeleteLineLeft'),
@@ -283,7 +283,7 @@ class Editor(QsciScintilla):
   def getPos(self):
     return self.send('sci_getcurrentpos')
 
-  def getCaretPos(self, pos):
+  def getPosXY(self, pos):
     return (self.send('sci_pointxfromposition', 0, pos),
         self.send('sci_pointyfromposition', 0, pos))
 

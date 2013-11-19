@@ -71,7 +71,7 @@ class Completer(QWidget):
           self.view.resize(300, self.view.lineHeight * (2 + len(words)))
           self.view.setCurrentIndex(self.model.index(self.currentRange.index))
           self.view.show()
-          x, y = self.editor.getCaretPos(self.currentRange.startPos)
+          x, y = self.editor.getPosXY(self.currentRange.startPos)
           self.view.move(x, y + self.editor.getLineHeight())
           return
     self.view.hide()

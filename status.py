@@ -17,11 +17,17 @@ class Status(QWidget):
 
   def paintEvent(self, ev):
     painter = QPainter(self)
-    painter.setRenderHint(QPainter.Antialiasing)
-    painter.setRenderHint(QPainter.TextAntialiasing)
     painter.setPen(QPen(QColor("#F58220")))
-    painter.setFont(QFont('Times', 64))
-    painter.drawText(QPoint(self.width() / 2, self.height() / 2), self.commandText)
+    font = QFont('Times', 32)
+    painter.setFont(font)
+    rect = QFontMetrics(font).boundingRect(self.commandText)
+    x, y = self.editor.getPosXY(self.editor.getPos())
+    y += rect.height()
+    if x + rect.width() > self.width():
+      x -= rect.width()
+    if y + rect.height() > self.height():
+      y -= rect.height()
+    painter.drawText(QPoint(x, y), self.commandText)
 
   def appendCommandText(self, t):
     self.commandText += t
