@@ -129,6 +129,7 @@ class Editor(QsciScintilla):
     self.editModeKeys = {
         'k': {
           'd': self.lexe(self.modeCommand),
+          'k': self.lexe(self.completer.nextCandidate),
           },
         ';': {
           ';': self.lexe('Tab'),
