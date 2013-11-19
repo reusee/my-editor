@@ -3,7 +3,7 @@ from PyQt4.QtGui import *
 
 class Terminal(QWidget):
   def __init__(self, parent):
-    super(QWidget, self).__init__(parent)
+    super(Terminal, self).__init__(parent)
     self.process = QProcess(self)
     self.process.start('urxvt',
         ['-embed', str(self.winId())])

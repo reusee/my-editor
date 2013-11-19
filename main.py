@@ -7,7 +7,7 @@ from editor import *
 
 class Main(QMainWindow):
     def __init__(self):
-        super(QMainWindow, self).__init__()
+        super(Main, self).__init__()
         self.editor = Editor()
         self.setCentralWidget(self.editor)
 

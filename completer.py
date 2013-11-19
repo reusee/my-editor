@@ -10,7 +10,7 @@ class Completer(QWidget):
   wordPattern = re.compile(r'[a-zA-Z0-9_][a-zA-Z0-9-_]*')
 
   def __init__(self, parent):
-    super(QWidget, self).__init__(parent)
+    super(Completer, self).__init__(parent)
     self.editor = parent
 
     self.model = QStringListModel()

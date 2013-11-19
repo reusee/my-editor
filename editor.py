@@ -121,7 +121,7 @@ class Editor(QsciScintilla):
 
         ',': {
             'q': self.lexe(sys.exit),
-            't': lambda _: self.load(self.file_chooser.choose()),
+            't': lambda _: self.open(self.file_chooser.choose()),
           },
         }
     self.setupNCommands()
@@ -165,7 +165,7 @@ class Editor(QsciScintilla):
 
   def keyResetTimeout(self):
     for e in self.delayEvents:
-      super(QsciScintilla, self).keyPressEvent(e[0])
+      super(Editor, self).keyPressEvent(e[0])
     self.resetKeys(self.editModeKeys)
 
   def resetKeys(self, keys):
@@ -262,7 +262,8 @@ class Editor(QsciScintilla):
       else arg 
       for arg in args])
 
-  def load(self, path):
+  def open(self, path):
+    if not path: return
     f = QFile(os.path.expanduser(path))
     if f.open(QFile.ReadOnly):
       self.read(f)
@@ -277,8 +278,7 @@ class Editor(QsciScintilla):
       self.send("sci_stylesetfont", 1, b'Terminus')
 
   def error(self, msg): #TODO
-    print(msg)
-    sys.exit(-1)
+    print('ERROR', msg)
 
   def getPos(self):
     return self.send('sci_getcurrentpos')
