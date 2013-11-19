@@ -97,7 +97,9 @@ class Completer(QWidget):
     self.currentRange = r
     self.rangeChanged()
 
-  def completeNext(self):
+  def nextCandidate(self):
+    if len(self.currentRange.showing) == 0:
+      return False
     self.completing = True
     if self.currentRange.index == -1:
       self.currentRange.showing.append( # add current chars to showing
@@ -114,6 +116,7 @@ class Completer(QWidget):
     self.currentRange.endPos = self.currentRange.startPos + len(replace)
     self.rangeChanged()
     self.completing = False
+    return True
 
 class Range(QObject):
   changed = pyqtSignal()

@@ -125,6 +125,9 @@ class Editor(QsciScintilla):
         'k': {
           'd': self.lexe(self.modeCommand),
           },
+        ';': {
+          ';': self.lexe('Tab'),
+          },
 
         Qt.Key_Escape: self.lexe(self.modeCommand),
         Qt.Key_Return: self.lexe('Newline'),
@@ -138,7 +141,7 @@ class Editor(QsciScintilla):
         Qt.Key_Right: self.lexe('CharRight'),
         Qt.Key_Up: self.lexe('LineUp'),
         Qt.Key_Down: self.lexe('LineDown'),
-        Qt.Key_Tab: self.lexe(self.completer.completeNext),
+        Qt.Key_Tab: lambda _: self.exe('Tab') if not self.completer.nextCandidate() else None,
         }
 
     self.modeCommand()
