@@ -10,6 +10,7 @@ from ctypes import *
 from status import *
 from completer import *
 from configure import *
+from file_chooser import *
 
 class Editor(QsciScintilla):
 
@@ -36,8 +37,6 @@ class Editor(QsciScintilla):
     self.base = self.pool()
     self.selectMode = self.NONE
     self.lexer = None
-    self.status = Status(self)
-    self.completer = Completer(self)
     self.locateFunc = lambda _: None
     self.n = 0
     self.delayEvents = []
@@ -47,6 +46,11 @@ class Editor(QsciScintilla):
     self.base.SCN_MODIFIED.connect(lambda *args: self.modified.emit(*args))
 
     configureEditor(self)
+
+    # components
+    self.completer = Completer(self)
+    self.status = Status(self)
+    self.file_chooser = FileChooser(self)
 
     # font
     self.font = QFont("Terminus", 13) # font
@@ -73,8 +77,8 @@ class Editor(QsciScintilla):
 
         'a': self.lexe('CharRight', self.modeEdit),
         'A': self.lexe('LineEnd', self.modeEdit),
-        's': lambda _: self.locateDoubleChars,
-        'S': lambda _: self.locateDoubleCharsBackward,
+        's': lambda _: self.locateByTwoChars(),
+        'S': lambda _: self.locateBackwardByTwoChars(),
         'd': (
           {
             'e': self.lexe('DeleteLineLeft'),
@@ -117,6 +121,7 @@ class Editor(QsciScintilla):
 
         ',': {
             'q': self.lexe(sys.exit),
+            't': lambda _: self.load(self.file_chooser.choose()),
           },
         }
     self.setupNCommands()
@@ -144,7 +149,7 @@ class Editor(QsciScintilla):
         Qt.Key_Tab: lambda _: self.exe('Tab') if not self.completer.nextCandidate() else None,
         }
 
-    self.modeCommand()
+    self.modeCommand() # default mode
 
   def resizeEvent(self, ev):
     self.resized.emit(ev)
@@ -358,7 +363,7 @@ class Editor(QsciScintilla):
     for i in range(0, 10):
       self.commandModeKeys[str(i)] = make(i)
 
-  def locateDoubleChars(self, ev):
+  def locateByTwoChars(self, ev):
     c = ev.text()
     def next(ev):
       buf = create_string_buffer(bytes(c + ev.text(), "utf8"))
@@ -376,7 +381,7 @@ class Editor(QsciScintilla):
       f(None)
     return next
 
-  def locateDoubleCharsBackward(self, ev):
+  def locateBackwardByTwoChars(self, ev):
     c = ev.text()
     def next(ev):
       buf = create_string_buffer(bytes(c + ev.text(), "utf8"))
