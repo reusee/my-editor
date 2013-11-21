@@ -13,6 +13,7 @@ def configureEditor(self):
     self.setCaretLineVisible(True)
     self.setCaretLineBackgroundColor(QColor("#FFE4E4"))
     self.send("sci_sethscrollbar", 0)
+    self.send("sci_setvscrollbar", 0)
     self.send('sci_setmousedowncaptures', 0)
     self.setTabWidth(2) # tabs
     self.setIndentationWidth(0)
