@@ -29,7 +29,7 @@ class Documents(QObject):
       self.editor.send('sci_settext', ctypes.create_string_buffer(f.read().encode('utf8')))
       self.documents.append(Document(path, doc))
       self.index = len(self.documents) - 1
-      self.setupLexer(path)
+    self.setupLexer(path)
 
   def setupLexer(self, path):
     if path.endswith('.py'): # lexer

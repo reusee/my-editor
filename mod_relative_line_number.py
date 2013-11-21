@@ -4,6 +4,7 @@ class RelativeLineNumber:
     self.editor = editor
     self.editor.setMarginType(margin, self.editor.TextMargin)
     self.margin = margin
+    self.update()
 
   def update(self):
     current_line_number = self.editor.send('sci_linefromposition', self.editor.getPos())

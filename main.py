@@ -3,7 +3,6 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import sys
 
-from layout import *
 from editor import *
 
 class Main(QMainWindow):
@@ -12,23 +11,37 @@ class Main(QMainWindow):
         self.centralWidget = QWidget()
         self.setCentralWidget(self.centralWidget)
 
-        self.editor = Editor()
-        self.editor2 = self.editor.clone()
-        self.editor3 = self.editor.clone()
-        self.editor4 = self.editor.clone()
-        self.editor5 = self.editor.clone()
+        self.layout = QVBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(0)
+        self.centralWidget.setLayout(self.layout)
 
-        self.centralWidget.setLayout(parseLayout([V,
-            self.editor,
-            [H,
-                self.editor2,
-                self.editor3,
-                ],
-            [H,
-                self.editor4,
-                self.editor5,
-                ],
-            ]))
+        self.editor = Editor()
+        self.layout.addWidget(self.editor)
+        setattr(self.editor, 'parentLayout', self.layout)
+
+        self.editors = []
+        self.register(self.editor)
+
+    def register(self, editor):
+        self.editors.append(editor)
+        editor.nextEditorRequested.connect(self.nextEditor)
+        editor.prevEditorRequested.connect(self.prevEditor)
+        editor.cloned.connect(self.register)
+
+    def nextEditor(self, e):
+        index = self.editors.index(e)
+        index += 1
+        if index == len(self.editors):
+            index = 0
+        self.editors[index].setFocus()
+
+    def prevEditor(self, e):
+        index = self.editors.index(e)
+        index -= 1
+        if index < 0:
+            index = len(self.editors) - 1
+        self.editors[index].setFocus()
 
 def main():
     app = QApplication(sys.argv)

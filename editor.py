@@ -6,6 +6,7 @@ from editor_base import *
 from cmd_locate import *
 from cmd_newline import *
 from cmd_scroll import *
+from cmd_layout import *
 
 # modules
 from mod_status import *
@@ -21,10 +22,13 @@ class Editor(EditorBase,
     CmdLocate,
     CmdNewline,
     CmdScroll,
+    CmdLayout,
     ):
 
   openRequested = pyqtSignal(str)
   cloned = pyqtSignal(QObject)
+  nextEditorRequested = pyqtSignal(QObject)
+  prevEditorRequested = pyqtSignal(QObject)
 
   def __init__(self):
     super(Editor, self).__init__()
@@ -114,6 +118,13 @@ class Editor(EditorBase,
         ',': {
             'q': self.do(sys.exit),
             't': lambda _: self.openRequested.emit(self.file_chooser.choose()),
+            's': {
+              's': self.do(self.siblingSplit),
+              'v': self.do((self.split, QVBoxLayout)),
+              'h': self.do((self.split, QHBoxLayout)),
+              'n': self.do((self.nextEditorRequested.emit, self)),
+              'p': self.do((self.prevEditorRequested.emit, self)),
+              },
           },
         }
     self.setupNCommands()
