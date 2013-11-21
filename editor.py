@@ -34,6 +34,7 @@ class Editor(EditorBase,
     super(Editor, self).__init__()
 
     self.n = 0
+    self.active = False
 
     # error handling
     self.errored.connect(lambda msg: print(msg)) # TODO

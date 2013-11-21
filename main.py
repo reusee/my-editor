@@ -19,6 +19,7 @@ class Main(QMainWindow):
         self.editor = Editor()
         self.layout.addWidget(self.editor)
         setattr(self.editor, 'parentLayout', self.layout)
+        self.editor.active = True
 
         self.editors = []
         self.register(self.editor)
@@ -30,17 +31,21 @@ class Main(QMainWindow):
         editor.cloned.connect(self.register)
 
     def nextEditor(self, e):
+        e.active = False
         index = self.editors.index(e)
         index += 1
         if index == len(self.editors):
             index = 0
+        self.editors[index].active = True
         self.editors[index].setFocus()
 
     def prevEditor(self, e):
+        e.active = False
         index = self.editors.index(e)
         index -= 1
         if index < 0:
             index = len(self.editors) - 1
+        self.editors[index].active = True
         self.editors[index].setFocus()
 
 def main():

@@ -21,6 +21,7 @@ class EditorBase(QsciScintilla):
   resized = pyqtSignal(QResizeEvent)
   modified = pyqtSignal(int, int, object, int, int, int, int, int, int, int)
   errored = pyqtSignal(str)
+  beated = pyqtSignal()
 
   commandCanceled = pyqtSignal()
   commandPrefix = pyqtSignal(str)
@@ -90,6 +91,7 @@ class EditorBase(QsciScintilla):
       self.handleEditKey(ev)
     elif self.mode == self.COMMAND:
       self.handleCommandKey(ev)
+    self.beated.emit()
 
   def keyResetTimeout(self):
     for e in self.delayEvents:

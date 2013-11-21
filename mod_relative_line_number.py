@@ -1,12 +1,15 @@
 class RelativeLineNumber:
   def __init__(self, editor, margin):
-    editor.base.SCN_UPDATEUI.connect(self.update)
     self.editor = editor
+    self.editor.beated.connect(self.update)
     self.editor.setMarginType(margin, self.editor.TextMargin)
     self.margin = margin
     self.update()
 
   def update(self):
+    if not self.editor.active:
+        self.editor.setMarginWidth(self.margin, 0)
+        return
     current_line_number = self.editor.send('sci_linefromposition', self.editor.getPos())
     maxLength = 0
     for i in range(self.editor.send('sci_linesonscreen')):
