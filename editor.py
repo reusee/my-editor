@@ -8,14 +8,14 @@ from cmd_locate import *
 from cmd_newline import *
 from cmd_scroll import *
 
-# components
-from status import *
-from completer import *
-from file_chooser import *
-from relative_line_number import *
+# modules
+from mod_status import *
+from mod_completer import *
+from mod_file_chooser import *
+from mod_relative_line_number import *
 
 #   lexer
-#   extra components
+#   extra modules
 #   key bindings
 class Editor(EditorBase,
     # commands
@@ -32,7 +32,7 @@ class Editor(EditorBase,
 
     self.errored.connect(lambda msg: print(msg)) # TODO
 
-    # components
+    # modules
     self.completer = Completer(self)
     self.status = Status(self)
     self.file_chooser = FileChooser(self)
