@@ -64,18 +64,12 @@ class EditorBase(QsciScintilla):
 
   def exe(self, *cmds):
     for cmd in cmds:
-      self.commands.find(getattr(QsciCommand, cmd)).execute()
-
-  def lexe(self, *cmds):
-    def f(ev):
-      for cmd in cmds:
-        if isinstance(cmd, str):
-          self.exe(cmd)
-        elif isinstance(cmd, tuple):
-          cmd[0](*cmd[1:])
-        else:
-          cmd()
-    return f
+      if isinstance(cmd, str):
+        self.commands.find(getattr(QsciCommand, cmd)).execute()
+      elif isinstance(cmd, tuple):
+        cmd[0](*cmd[1:])
+      else:
+        cmd()
 
   def send(self, *args):
     return self.SendScintilla(*[

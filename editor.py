@@ -1,7 +1,3 @@
-from PyQt4.Qsci import *
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-
 import sys
 import os
 
@@ -9,17 +5,20 @@ from editor_base import *
 
 # commands
 from cmd_locate import *
+from cmd_newline import *
 
 # components
 from status import *
 from completer import *
 from file_chooser import *
 
-# lexer
-# extra components
-# key bindings
+#   lexer
+#   extra components
+#   key bindings
 class Editor(EditorBase,
+    # commands
     CmdLocate,
+    CmdNewline,
     ):
 
   def __init__(self):
@@ -37,70 +36,70 @@ class Editor(EditorBase,
 
     # key bindings
     self.commandModeKeys = {
-        'q': (self.lexe(self.modeSelectRectangle), self.lexe(self.modeSelectNone), self.lexe(self.modeSelectNone)),
-        'e': (self.lexe('Home'), self.lexe('HomeExtend'), self.lexe('HomeRectExtend')),
-        'r': (self.lexe('LineEnd'), self.lexe('LineEndExtend'), self.lexe('LineEndRectExtend')),
+        'q': (self.do(self.modeSelectRectangle), self.do(self.modeSelectNone), self.do(self.modeSelectNone)),
+        'e': (self.do('Home'), self.do('HomeExtend'), self.do('HomeRectExtend')),
+        'r': (self.do('LineEnd'), self.do('LineEndExtend'), self.do('LineEndRectExtend')),
         'y': (
-          {'y': self.lexe('LineCopy'), 'p': self.lexe('LineDuplicate'), 'x': self.lexe('LineTranspose')},
-          self.lexe('SelectionCopy', self.modeSelectNone),
-          self.lexe('SelectionCopy', self.modeSelectNone),
+          {'y': self.do('LineCopy'), 'p': self.do('LineDuplicate'), 'x': self.do('LineTranspose')},
+          self.do('SelectionCopy', self.modeSelectNone),
+          self.do('SelectionCopy', self.modeSelectNone),
           ),
-        'u': self.lexe('Undo'),
-        'U': (self.lexe('PageUp'), self.lexe('PageUpExtend'), self.lexe('PageUpRectExtend')),
-        'i': self.lexe(self.modeEdit),
-        'I': self.lexe('Home', self.modeEdit),
-        'o': self.lexe(self.beginUndoAction, 'LineEnd', 'Newline', self.modeEdit, self.endUndoAction),
-        'O': self.lexe(self.beginUndoAction, 'Home', 'Newline', 'LineUp', self.modeEdit, self.endUndoAction),
-        'p': self.lexe('Paste'),
-        '[': (self.lexe('ParaUp'), self.lexe('ParaUpExtend'), self.lexe('ParaUpExtend')),
-        ']': (self.lexe('ParaDown'), self.lexe('ParaDownExtend'), self.lexe('ParaDownExtend')),
+        'u': self.do('Undo'),
+        'U': (self.do('PageUp'), self.do('PageUpExtend'), self.do('PageUpRectExtend')),
+        'i': self.do(self.modeEdit),
+        'I': self.do('Home', self.modeEdit),
+        'o': self.do(self.newlineBelow),
+        'O': self.do(self.newlineAbove),
+        'p': self.do('Paste'),
+        '[': (self.do('ParaUp'), self.do('ParaUpExtend'), self.do('ParaUpExtend')),
+        ']': (self.do('ParaDown'), self.do('ParaDownExtend'), self.do('ParaDownExtend')),
 
-        'a': self.lexe('CharRight', self.modeEdit),
-        'A': self.lexe('LineEnd', self.modeEdit),
+        'a': self.do('CharRight', self.modeEdit),
+        'A': self.do('LineEnd', self.modeEdit),
         's': lambda _: self.locateByTwoChars,
         'S': lambda _: self.locateBackwardByTwoChars,
         'd': (
           {
-            'e': self.lexe('DeleteLineLeft'),
-            'r': self.lexe('DeleteLineRight'),
-            'd': self.lexe('LineCut'),
-            'h': self.lexe('DeleteWordLeft'),
-            'l': self.lexe('DeleteWordRightEnd'),
+            'e': self.do('DeleteLineLeft'),
+            'r': self.do('DeleteLineRight'),
+            'd': self.do('LineCut'),
+            'h': self.do('DeleteWordLeft'),
+            'l': self.do('DeleteWordRightEnd'),
             },
-          self.lexe('SelectionCut', self.modeSelectNone),
-          self.lexe('SelectionCut', self.modeSelectNone),
+          self.do('SelectionCut', self.modeSelectNone),
+          self.do('SelectionCut', self.modeSelectNone),
           ),
         'f': self.makeCharLocators(),
         'F': self.makeCharLocators(backward = True),
         'g': {
-          'g': (self.lexe('DocumentStart'), self.lexe('DocumentStartExtend'), self.lexe('DocumentStartExtend')),
-          'a': self.lexe('SelectAll'),
+          'g': (self.do('DocumentStart'), self.do('DocumentStartExtend'), self.do('DocumentStartExtend')),
+          'a': self.do('SelectAll'),
           },
-        'G': (self.lexe('DocumentEnd'), self.lexe('DocumentEndExtend'), self.lexe('DocumentEndExtend')),
-        'h': (self.lexe('CharLeft'), self.lexe('CharLeftExtend'), self.lexe('CharLeftRectExtend')),
-        'j': (self.lexe('LineDown'), self.lexe('LineDownExtend'), self.lexe('LineDownRectExtend')),
-        'J': (self.lexe('LineScrollUp'), self.lexe('MoveSelectedLinesDown'), self.lexe('MoveSelectedLinesDown')),
-        'k': (self.lexe('LineUp'), self.lexe('LineUpExtend'), self.lexe('LineUpRectExtend')),
-        'K': (self.lexe('LineScrollDown'), self.lexe('MoveSelectedLinesUp'), self.lexe('MoveSelectedLinesUp')),
-        'l': (self.lexe('CharRight'), self.lexe('CharRightExtend'), self.lexe('CharRightRectExtend')),
+        'G': (self.do('DocumentEnd'), self.do('DocumentEndExtend'), self.do('DocumentEndExtend')),
+        'h': (self.do('CharLeft'), self.do('CharLeftExtend'), self.do('CharLeftRectExtend')),
+        'j': (self.do('LineDown'), self.do('LineDownExtend'), self.do('LineDownRectExtend')),
+        'J': (self.do('LineScrollUp'), self.do('MoveSelectedLinesDown'), self.do('MoveSelectedLinesDown')),
+        'k': (self.do('LineUp'), self.do('LineUpExtend'), self.do('LineUpRectExtend')),
+        'K': (self.do('LineScrollDown'), self.do('MoveSelectedLinesUp'), self.do('MoveSelectedLinesUp')),
+        'l': (self.do('CharRight'), self.do('CharRightExtend'), self.do('CharRightRectExtend')),
         ';': lambda _: self.lastLocateFunc(None),
 
-        'z': self.lexe('VerticalCentreCaret'),
-        'x': self.lexe('Delete'),
-        'X': self.lexe('DeleteBackNotLine'),
+        'z': self.do('VerticalCentreCaret'),
+        'x': self.do('Delete'),
+        'X': self.do('DeleteBackNotLine'),
         'c': {
-            'c': self.lexe(self.beginUndoAction, 'LineCut', 'Home', 'Newline', 'LineUp', self.modeEdit, self.endUndoAction),
-            'e': self.lexe('DeleteLineLeft', self.modeEdit),
-            'r': self.lexe('DeleteLineRight', self.modeEdit),
-            'h': self.lexe('DeleteWordLeft', self.modeEdit),
-            'l': self.lexe('DeleteWordRightEnd', self.modeEdit),
+            'c': self.do(self.beginUndoAction, 'LineCut', 'Home', 'Newline', 'LineUp', self.modeEdit, self.endUndoAction),
+            'e': self.do('DeleteLineLeft', self.modeEdit),
+            'r': self.do('DeleteLineRight', self.modeEdit),
+            'h': self.do('DeleteWordLeft', self.modeEdit),
+            'l': self.do('DeleteWordRightEnd', self.modeEdit),
             },
-        'C': self.lexe('DeleteLineRight', self.modeEdit),
-        'v': self.lexe(self.modeSelectStream),
-        'M': (self.lexe('PageDown'), self.lexe('PageDownExtend'), self.lexe('PageDownRectExtend')),
+        'C': self.do('DeleteLineRight', self.modeEdit),
+        'v': self.do(self.modeSelectStream),
+        'M': (self.do('PageDown'), self.do('PageDownExtend'), self.do('PageDownRectExtend')),
 
         ',': {
-            'q': self.lexe(sys.exit),
+            'q': self.do(sys.exit),
             't': lambda _: self.open(self.file_chooser.choose()),
           },
         }
@@ -108,25 +107,25 @@ class Editor(EditorBase,
 
     self.editModeKeys = {
         'k': {
-          'd': self.lexe(self.modeCommand),
-          'k': self.lexe(self.completer.nextCandidate),
+          'd': self.do(self.modeCommand),
+          'k': self.do(self.completer.nextCandidate),
           },
         ';': {
-          ';': self.lexe('Tab'),
+          ';': self.do('Tab'),
           },
 
-        Qt.Key_Escape: self.lexe(self.modeCommand),
-        Qt.Key_Return: self.lexe('Newline'),
-        Qt.Key_Backspace: self.lexe('DeleteBackNotLine'),
-        Qt.Key_Delete: self.lexe('Delete'),
-        Qt.Key_Home: self.lexe('DocumentStart'),
-        Qt.Key_End: self.lexe('DocumentEnd'),
-        Qt.Key_PageUp: self.lexe('PageUp'),
-        Qt.Key_PageDown: self.lexe('PageDown'),
-        Qt.Key_Left: self.lexe('CharLeft'),
-        Qt.Key_Right: self.lexe('CharRight'),
-        Qt.Key_Up: self.lexe('LineUp'),
-        Qt.Key_Down: self.lexe('LineDown'),
+        Qt.Key_Escape: self.do(self.modeCommand),
+        Qt.Key_Return: self.do('Newline'),
+        Qt.Key_Backspace: self.do('DeleteBackNotLine'),
+        Qt.Key_Delete: self.do('Delete'),
+        Qt.Key_Home: self.do('DocumentStart'),
+        Qt.Key_End: self.do('DocumentEnd'),
+        Qt.Key_PageUp: self.do('PageUp'),
+        Qt.Key_PageDown: self.do('PageDown'),
+        Qt.Key_Left: self.do('CharLeft'),
+        Qt.Key_Right: self.do('CharRight'),
+        Qt.Key_Up: self.do('LineUp'),
+        Qt.Key_Down: self.do('LineDown'),
         Qt.Key_Tab: lambda _: self.exe('Tab') if not self.completer.nextCandidate() else None,
         }
 
@@ -150,6 +149,9 @@ class Editor(EditorBase,
       self.lexer.setDefaultFont(self.font)
       self.setLexer(self.lexer)
       self.send("sci_stylesetfont", 1, b'Terminus')
+
+  def do(self, *cmds):
+    return lambda _: self.exe(*cmds)
 
   # commands
 
