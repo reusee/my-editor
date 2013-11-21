@@ -1,6 +1,7 @@
-from PyQt4.Qsci import *
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.Qsci import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 
 def configureEditor(self):
     self.standardCommands().clearKeys() # clear default key bindings

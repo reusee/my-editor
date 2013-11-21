@@ -31,11 +31,7 @@ class Editor(EditorBase,
   prevEditorRequested = pyqtSignal(QObject)
 
   def __init__(self):
-    EditorBase.__init__(self)
-    CmdLocate.__init__(self)
-    CmdNewline.__init__(self)
-    CmdScroll.__init__(self)
-    CmdLayout.__init__(self)
+    super().__init__()
 
     self.n = 0
     self.active = False

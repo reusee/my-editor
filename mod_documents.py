@@ -1,5 +1,5 @@
-from PyQt4.Qsci import *
-from PyQt4.QtCore import *
+from PyQt5.Qsci import *
+from PyQt5.QtCore import *
 import os
 import ctypes
 

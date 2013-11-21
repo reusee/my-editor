@@ -1,8 +1,10 @@
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 
 class CmdLayout:
   def __init__(self):
+    super().__init__()
     self.parentLayout = None
 
   def siblingSplit(self):
