@@ -83,11 +83,13 @@ class Editor(EditorBase,
           },
         'G': (self.do('DocumentEnd'), self.do('DocumentEndExtend'), self.do('DocumentEndExtend')),
         'h': (self.do('CharLeft'), self.do('CharLeftExtend'), self.do('CharLeftRectExtend')),
+        'H': self.do(self.documents.nextDocument),
         'j': (self.do('LineDown'), self.do('LineDownExtend'), self.do('LineDownRectExtend')),
         'J': (self.do('LineScrollUp'), self.do('MoveSelectedLinesDown'), self.do('MoveSelectedLinesDown')),
         'k': (self.do('LineUp'), self.do('LineUpExtend'), self.do('LineUpRectExtend')),
         'K': (self.do('LineScrollDown'), self.do('MoveSelectedLinesUp'), self.do('MoveSelectedLinesUp')),
         'l': (self.do('CharRight'), self.do('CharRightExtend'), self.do('CharRightRectExtend')),
+        'L': self.do(self.documents.prevDocument),
         ';': lambda _: self.lastLocateFunc(None),
 
         'z': {
