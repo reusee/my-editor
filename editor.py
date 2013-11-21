@@ -1,5 +1,4 @@
 import sys
-import os
 
 from editor_base import *
 
@@ -13,8 +12,8 @@ from mod_status import *
 from mod_completer import *
 from mod_file_chooser import *
 from mod_relative_line_number import *
+from mod_documents import *
 
-#   lexer
 #   extra modules
 #   key bindings
 class Editor(EditorBase,
@@ -24,12 +23,14 @@ class Editor(EditorBase,
     CmdScroll,
     ):
 
+  openRequested = pyqtSignal(str)
+
   def __init__(self):
     super(Editor, self).__init__()
 
-    self.lexer = None
     self.n = 0
 
+    # error handling
     self.errored.connect(lambda msg: print(msg)) # TODO
 
     # modules
@@ -37,6 +38,7 @@ class Editor(EditorBase,
     self.status = Status(self)
     self.file_chooser = FileChooser(self)
     self.relative_line_number = RelativeLineNumber(self, 0)
+    self.documents = Documents(self)
 
     # key bindings
     self.commandModeKeys = {
@@ -108,7 +110,7 @@ class Editor(EditorBase,
 
         ',': {
             'q': self.do(sys.exit),
-            't': lambda _: self.open(self.file_chooser.choose()),
+            't': lambda _: self.openRequested.emit(self.file_chooser.choose()),
           },
         }
     self.setupNCommands()
@@ -139,29 +141,8 @@ class Editor(EditorBase,
 
     self.modeCommand() # default mode
 
-  # utils
-
-  def open(self, path):
-    if not path: return
-    f = QFile(os.path.expanduser(path))
-    if f.open(QFile.ReadOnly):
-      self.read(f)
-    else:
-      self.error("cannot open %s" % path)
-      return
-    self.setupLexer(path)
-
-  def setupLexer(self, path):
-    if path.endswith('.py'): # lexer
-      self.lexer = QsciLexerPython()
-      self.lexer.setDefaultFont(self.font)
-      self.setLexer(self.lexer)
-      self.send("sci_stylesetfont", 1, b'Terminus')
-
   def do(self, *cmds):
     return lambda _: self.exe(*cmds)
-
-  # commands
 
   def setupNCommands(self):
     def make(i):
