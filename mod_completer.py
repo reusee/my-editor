@@ -10,7 +10,7 @@ class Completer(QWidget):
   wordPattern = re.compile(r'[a-zA-Z0-9_][a-zA-Z0-9-_]*')
 
   def __init__(self, parent):
-    super(Completer, self).__init__(parent)
+    super().__init__(parent)
     self.editor = parent
 
     self.model = QStringListModel()
@@ -122,7 +122,7 @@ class Range(QObject):
   changed = pyqtSignal()
 
   def __init__(self, editor, words, startPos, endPos):
-    super(QObject, self).__init__()
+    super().__init__()
     self.words = words
     self.editor = editor
 
@@ -175,7 +175,7 @@ class Range(QObject):
 
 class View(QListView):
   def __init__(self, parent):
-    super(QListView, self).__init__(parent)
+    super().__init__(parent)
     self.setAttribute(Qt.WA_TransparentForMouseEvents)
     self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
     self.setSelectionBehavior(self.SelectRows)

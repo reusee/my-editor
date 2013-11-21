@@ -29,7 +29,7 @@ class EditorBase(QsciScintilla):
   commandInvalid = pyqtSignal()
 
   def __init__(self):
-    super(EditorBase, self).__init__()
+    super().__init__()
 
     self.base = self.pool()
     self.lastLocateFunc = lambda _: None
@@ -95,7 +95,7 @@ class EditorBase(QsciScintilla):
 
   def keyResetTimeout(self):
     for e in self.delayEvents:
-      super(Editor, self).keyPressEvent(e[0])
+      super().keyPressEvent(e[0])
     self.resetKeys(self.editModeKeys)
 
   def resetKeys(self, keys):
@@ -123,13 +123,13 @@ class EditorBase(QsciScintilla):
     else:
       self.keyResetTimer.stop()
       for e in self.delayEvents: # pop all delay events
-        super(QsciScintilla, self).keyPressEvent(e[0])
+        super().keyPressEvent(e[0])
       self.resetKeys(self.editModeKeys)
-      super(QsciScintilla, self).keyPressEvent(ev)
+      super().keyPressEvent(ev)
 
   def handleCommandKey(self, ev):
     if ev.key() == Qt.Key_Shift: # ignore shift key
-      return super(QsciScintilla, self).keyPressEvent(ev)
+      return super().keyPressEvent(ev)
     elif ev.key() == Qt.Key_Escape: # cancel command
       self.resetKeys(self.commandModeKeys)
       self.commandCanceled.emit()

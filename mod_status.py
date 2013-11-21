@@ -3,7 +3,7 @@ from PyQt4.QtGui import *
 
 class Status(QWidget):
   def __init__(self, parent):
-    super(Status, self).__init__(parent)
+    super().__init__(parent)
     self.editor = parent
     self.raise_()
     self.setAttribute(Qt.WA_TransparentForMouseEvents)

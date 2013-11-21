@@ -5,7 +5,7 @@ import ctypes
 
 class Documents(QObject):
   def __init__(self, editor):
-    super(Documents, self).__init__()
+    super().__init__()
     self.editor = editor
     editor.openRequested.connect(self.open)
     self.documents = []

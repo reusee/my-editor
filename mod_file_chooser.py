@@ -4,7 +4,7 @@ import os
 
 class FileChooser(QDialog):
   def __init__(self, parent):
-    super(FileChooser, self).__init__(parent)
+    super().__init__(parent)
 
     self.path = ''
     self.head = ''
@@ -31,7 +31,7 @@ class FileChooser(QDialog):
     self.edit.clear()
     self.edit.setFocus()
     self.updateList('')
-    super(FileChooser, self).exec_()
+    super().exec_()
 
   def resized(self, ev):
     self.resize(ev.size())
@@ -48,7 +48,7 @@ class FileChooser(QDialog):
 
   def reject(self):
     self.path = None
-    super(FileChooser, self).reject()
+    super().reject()
 
   def choose(self):
     self.exec_()

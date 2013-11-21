@@ -31,7 +31,7 @@ class Editor(EditorBase,
   prevEditorRequested = pyqtSignal(QObject)
 
   def __init__(self):
-    super(Editor, self).__init__()
+    super().__init__()
 
     self.n = 0
     self.active = False
