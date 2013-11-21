@@ -64,10 +64,10 @@ class FileChooser(QDialog):
       self.model.setStringList(sorted([f
           for f in os.listdir(head)
           if self.fuzzyMatch(tail, f)]))
-      self.view.setStyleSheet('QLineEdit { background-color: white; }')
+      self.view.setStyleSheet('QLineEdit { color: black; }')
     except FileNotFoundError:
       self.model.setStringList([])
-      self.view.setStyleSheet('QLineEdit { background-color: red; }')
+      self.view.setStyleSheet('QLineEdit { color: red; }')
     self.view.setCurrentIndex(self.model.index(0, 0))
 
   def fuzzyMatch(self, key, s):

@@ -11,6 +11,7 @@ from cmd_newline import *
 from status import *
 from completer import *
 from file_chooser import *
+from relative_line_number import *
 
 #   lexer
 #   extra components
@@ -33,6 +34,7 @@ class Editor(EditorBase,
     self.completer = Completer(self)
     self.status = Status(self)
     self.file_chooser = FileChooser(self)
+    self.relative_line_number = RelativeLineNumber(self, 0)
 
     # key bindings
     self.commandModeKeys = {

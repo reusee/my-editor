@@ -2,7 +2,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import re
 
-MAX_WORD_LENGTH = 256
+MAX_WORD_LENGTH = 64
 
 class Completer(QWidget):
   buf = bytearray(MAX_WORD_LENGTH)
