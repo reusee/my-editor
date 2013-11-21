@@ -190,6 +190,7 @@ class EditorBase(QsciScintilla):
     self.selectMode = self.NONE
     self.send("sci_setcaretstyle", "caretstyle_block")
     self.send('sci_cancel')
+    self.send('sci_setsel', -1, self.getPos())
 
   def modeSelectRectangle(self):
     self.selectMode = self.RECT
