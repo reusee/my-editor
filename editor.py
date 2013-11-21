@@ -6,13 +6,21 @@ import sys
 import os
 
 from editor_base import *
+
+# commands
+from cmd_locate import *
+
+# components
 from status import *
 from completer import *
 from file_chooser import *
 
 # lexer
 # extra components
-class Editor(EditorBase):
+# key bindings
+class Editor(EditorBase,
+    CmdLocate,
+    ):
 
   def __init__(self):
     super(Editor, self).__init__()
@@ -153,4 +161,3 @@ class Editor(EditorBase):
       return f
     for i in range(0, 10):
       self.commandModeKeys[str(i)] = make(i)
-
