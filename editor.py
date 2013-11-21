@@ -6,6 +6,7 @@ from editor_base import *
 # commands
 from cmd_locate import *
 from cmd_newline import *
+from cmd_scroll import *
 
 # components
 from status import *
@@ -20,6 +21,7 @@ class Editor(EditorBase,
     # commands
     CmdLocate,
     CmdNewline,
+    CmdScroll,
     ):
 
   def __init__(self):
@@ -86,7 +88,11 @@ class Editor(EditorBase,
         'l': (self.do('CharRight'), self.do('CharRightExtend'), self.do('CharRightRectExtend')),
         ';': lambda _: self.lastLocateFunc(None),
 
-        'z': self.do('VerticalCentreCaret'),
+        'z': {
+            'z': self.do('VerticalCentreCaret'),
+            't': self.do(self.scrollCurrentLineToTop),
+            'b': self.do(self.scrollCurrentLineToBottom),
+            },
         'x': self.do('Delete'),
         'X': self.do('DeleteBackNotLine'),
         'c': {
