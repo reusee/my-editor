@@ -13,9 +13,7 @@ class Documents(QObject):
 
   def open(self, path):
     if not path: return
-    if self.index >= 0:
-      if self.documents[self.index].path == path: return
-      self.documents[self.index].pos = self.editor.getPos()
+    self.saveCurrent()
     index = -1
     for i in range(len(self.documents)):
       if self.documents[i].path == path:
@@ -39,11 +37,18 @@ class Documents(QObject):
       self.editor.setLexer(lexer)
       self.editor.send("sci_stylesetfont", 1, b'Terminus')
 
+  def saveCurrent(self):
+    if self.index >= 0:
+      self.documents[self.index].pos = self.editor.getPos()
+      self.documents[self.index].topLineNumber = self.editor.send('sci_getfirstvisibleline')
+
   def switchByIndex(self, index):
+    self.saveCurrent()
     document = self.documents[index]
-    self.editor.send('sci_setdocpointer', 0, document.pointer)
-    self.editor.send('sci_setcurrentpos', document.pos)
+    self.editor.send('sci_setdocpointer', 0, document.pointer) # switch
+    self.editor.send('sci_setcurrentpos', document.pos) # restore status
     self.editor.send('sci_setsel', -1, self.editor.getPos())
+    self.editor.send('sci_linescroll', 0, document.topLineNumber - self.editor.send('sci_getfirstvisibleline'))
     self.index = index
 
   def nextDocument(self):
@@ -63,3 +68,4 @@ class Document:
     self.path = path
     self.pointer = pointer
     self.pos = 0
+    self.topLineNumber = 0
