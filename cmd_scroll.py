@@ -1,4 +1,7 @@
 class CmdScroll:
+  def __init__(self):
+    super().__init__()
+
   def scrollCurrentLineToTop(self):
     current_line_number = self.send('sci_linefromposition', self.getPos())
     top_line_number = self.send('sci_getfirstvisibleline')

@@ -1,6 +1,9 @@
 from ctypes import *
 
 class CmdLocate:
+  def __init__(self):
+    super().__init__()
+
   def makeCharLocators(self, backward = False):
     handler = {}
     def makeLocator(c):
