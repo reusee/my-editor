@@ -10,6 +10,7 @@ class Documents(QObject):
     editor.openRequested.connect(self.open)
     self.documents = []
     self.index = -1
+    editor.cloned.connect(self.clone)
 
   def open(self, path):
     if not path: return
@@ -62,6 +63,9 @@ class Documents(QObject):
     if index < 0:
       index = len(self.documents) - 1
     self.switchByIndex(index)
+
+  def clone(self, editor):
+    editor.documents.documents = self.documents
 
 class Document:
   def __init__(self, path, pointer):

@@ -24,6 +24,7 @@ class Editor(EditorBase,
     ):
 
   openRequested = pyqtSignal(str)
+  cloned = pyqtSignal(QObject)
 
   def __init__(self):
     super(Editor, self).__init__()
@@ -154,3 +155,8 @@ class Editor(EditorBase,
       return f
     for i in range(0, 10):
       self.commandModeKeys[str(i)] = make(i)
+
+  def clone(self):
+    edit = Editor()
+    self.cloned.emit(edit)
+    return edit
