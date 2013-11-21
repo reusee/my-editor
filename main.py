@@ -18,7 +18,7 @@ class Main(QMainWindow):
 
         self.editor = Editor()
         self.layout.addWidget(self.editor)
-        setattr(self.editor, 'parentLayout', self.layout)
+        self.editor.parentLayout = self.layout
         self.editor.active = True
 
         self.editors = []
