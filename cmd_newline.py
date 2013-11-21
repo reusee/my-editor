@@ -11,8 +11,9 @@ class CmdNewline:
   def newlineAbove(self):
     self.exe(
         self.beginUndoAction,
-        'Home',
+        'LineEnd',
         'Newline',
+        'LineTranspose',
         'LineUp',
         self.modeEdit,
         self.endUndoAction,
