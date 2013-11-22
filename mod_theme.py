@@ -9,5 +9,7 @@ class Theme:
     for i in range(256):
       send('sci_stylesetsize', i, 13)
       send('sci_stylesetfont', i, b'Terminus')
-      send('sci_stylesetback', i, 0x222222 + 0xFFFFFF - send('sci_stylegetback', i))
-      send('sci_stylesetfore', i, 0xFFFFFF - send('sci_stylegetfore', i))
+      back = ~send('sci_stylegetback', i) + 0x222222
+      if back > 0xFFFFFF: back = 0xFFFFFF
+      send('sci_stylesetback', i, back)
+      send('sci_stylesetfore', i, ~send('sci_stylegetfore', i))
