@@ -39,6 +39,7 @@ class FileChooser(QDialog):
     self.resize(ev.size())
 
   def editPressed(self):
+    if self.model.rowCount() == 0: return
     self.path = self.model.data(self.view.currentIndex(), Qt.DisplayRole)
     path = os.path.join(self.head, self.path)
     if os.path.isfile(path):
@@ -54,7 +55,8 @@ class FileChooser(QDialog):
 
   def choose(self):
     self.exec_()
-    if not self.head or not self.path: return ''
+    if not self.head: self.head = ''
+    if not self.path: self.path = ''
     return os.path.join(self.head, self.path)
 
   def updateList(self, text):
