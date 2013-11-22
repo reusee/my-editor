@@ -36,7 +36,11 @@ class Completer(QWidget):
 
   def textChanged(self, position, modType, text, length, linesAdded, _line, _foldLevelNow, _foldLevelPrev, _token, _annotationLinesAdded):
     if self.completing: return
-    if text: text = text.decode('utf8')
+    try:
+      if text: text = text.decode('utf8')
+    except UnicodeDecodeError:
+      self.editor.error('Unicode decode error')
+      return
     if self.editor.mode == self.editor.EDIT:
       if modType & self.editor.base.SC_MOD_INSERTTEXT: # insert by edit
         if self.isWordChar(text): # a word char
