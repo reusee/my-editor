@@ -93,7 +93,7 @@ class Editor(EditorBase,
         'f': self.makeCharLocators(),
         'F': self.makeCharLocators(backward = True),
         'g': {
-          'g': (self.do('DocumentStart'), self.do('DocumentStartExtend'), self.do('DocumentStartExtend')),
+          'g': (lambda n: self.locateLine(n), self.do('DocumentStartExtend'), self.do('DocumentStartExtend')),
           'a': self.do('SelectAll'),
           },
         'G': (self.do('DocumentEnd'), self.do('DocumentEndExtend'), self.do('DocumentEndExtend')),

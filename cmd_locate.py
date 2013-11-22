@@ -73,3 +73,9 @@ class CmdLocate:
       f(None)
     return next
 
+  def locateLine(self, n):
+    if n == 0:
+      self.exe('DocumentStart')
+    else:
+      self.send('sci_setcurrentpos', self.send('sci_positionfromline', n))
+      self.send('sci_setsel', -1, self.getPos())
