@@ -46,6 +46,7 @@ class EditorBase(QsciScintilla):
     self.setFont(self.font)
 
     self.base.SCN_MODIFIED.connect(lambda *args: self.modified.emit(*args))
+    self.base.SCN_PAINTED.connect(self.beated.emit)
     self.keyResetTimer.timeout.connect(self.keyResetTimeout)
 
   def resizeEvent(self, ev):
