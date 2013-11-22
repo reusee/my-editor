@@ -11,16 +11,18 @@ class Layout:
 
   def siblingSplit(self):
     editor = self.editor.clone()
-    self.layout.addWidget(editor)
+    index = self.layout.indexOf(self.editor)
+    self.layout.insertWidget(index + 1, editor)
     editor.layout.layout = self.layout
 
   def split(self, layoutClass):
     editor = self.editor.clone()
     layout = layoutClass()
+    index = self.layout.indexOf(self.editor)
     self.layout.removeWidget(self.editor)
     layout.addWidget(self.editor)
     layout.addWidget(editor)
-    self.layout.addLayout(layout)
+    self.layout.insertLayout(index, layout)
     editor.layout.layout = layout
     self.layout = layout
 
