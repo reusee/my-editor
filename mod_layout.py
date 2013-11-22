@@ -9,6 +9,17 @@ class Layout:
     self.editor = editor
     self.layout = None
 
+  def register(self, editor):
+    self.editors.append(editor)
+    editor.cloned.connect(self.register)
+
+  def setup(self, layout):
+    layout.addWidget(self.editor)
+    self.layout = layout
+    self.register(self.editor)
+
+  # split
+
   def siblingSplit(self):
     editor = self.editor.clone()
     index = self.layout.indexOf(self.editor)
@@ -26,29 +37,49 @@ class Layout:
     editor.layout.layout = layout
     self.layout = layout
 
+  # switch
+
   def next(self):
-    self.editor.active = False
     index = self.editors.index(self.editor)
     index += 1
     if index == len(self.editors):
         index = 0
-    self.editors[index].active = True
-    self.editors[index].setFocus()
+    self.switch(index)
 
   def prev(self):
-    self.editor.active = False
     index = self.editors.index(self.editor)
     index -= 1
     if index < 0:
         index = len(self.editors) - 1
+    self.switch(index)
+
+  def switch(self, index):
+    self.editor.active = False
     self.editors[index].active = True
     self.editors[index].setFocus()
 
-  def register(self, editor):
-    self.editors.append(editor)
-    editor.cloned.connect(self.register)
+  def mapRect(self, editor):
+    rect = editor.rect()
+    return QRect(editor.mapToGlobal(rect.topLeft()), editor.mapToGlobal(rect.bottomRight()))
 
-  def setup(self, layout):
-    layout.addWidget(self.editor)
-    self.layout = layout
-    self.register(self.editor)
+  def iterAndSwitch(self, p):
+    for i, editor in enumerate(self.editors):
+      if self.mapRect(editor).contains(p):
+        self.switch(i)
+        return
+
+  def north(self):
+    p = self.mapRect(self.editor).topLeft() + QPoint(0, -10)
+    self.iterAndSwitch(p)
+
+  def south(self):
+    p = self.mapRect(self.editor).bottomLeft() + QPoint(0, 10)
+    self.iterAndSwitch(p)
+
+  def west(self):
+    p = self.mapRect(self.editor).topLeft() + QPoint(-10, 0)
+    self.iterAndSwitch(p)
+
+  def east(self):
+    p = self.mapRect(self.editor).topRight() + QPoint(10, 0)
+    self.iterAndSwitch(p)
