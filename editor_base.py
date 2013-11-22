@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.Qsci import *
 
 import time
+import inspect
 
 from configure import *
 
@@ -117,7 +118,7 @@ class EditorBase(QsciScintilla):
     if callable(handle): # trigger a command
       self.keyResetTimer.stop()
       self.resetKeys(self.editModeKeys)
-      handle(ev)
+      self.executeHandler(handle, ev)
     elif isinstance(handle, dict): # is command prefix
       self.currentKeys = handle
       self.delayEvents.append((QKeyEvent(ev), self.now()))
@@ -151,14 +152,14 @@ class EditorBase(QsciScintilla):
       handle = self.currentKeys
     if callable(handle): # trigger a command or call handler function
       self.resetKeys(self.commandModeKeys)
-      ret = handle(ev)
+      ret = self.executeHandler(handle, ev)
       if callable(ret): # another function handler
         self.currentKeys = ret
         self.commandPrefix.emit(ev.text())
       else: # final command
         if ret != 'setN': # not prefix setting command
           for n in range(0, self.n - 1): # do command n times
-            handle(ev)
+            self.executeHandler(handle, ev)
           self.n = 0
           self.commandRunned.emit()
         else: # is number prefix
@@ -170,6 +171,23 @@ class EditorBase(QsciScintilla):
     else: # no handler
       self.resetKeys(self.commandModeKeys)
       self.commandInvalid.emit()
+
+  def executeHandler(self, f, ev):
+    if '_param_names' not in f.__dict__:
+      params = inspect.getargspec(f).args
+      f.__dict__['_param_names'] = params
+    args = []
+    for param in f.__dict__['_param_names']:
+      if param == 'ev':
+        args.append(ev)
+      elif param == 'n':
+        args.append(self.n)
+      elif param == 'self':
+        continue
+      else:
+        print(param)
+        handler_error
+    return f(*args)
 
   # modes
 

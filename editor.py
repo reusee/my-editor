@@ -77,8 +77,8 @@ class Editor(EditorBase,
 
         'a': self.do('CharRight', self.modeEdit),
         'A': self.do('LineEnd', self.modeEdit),
-        's': lambda _: self.locateByTwoChars,
-        'S': lambda _: self.locateBackwardByTwoChars,
+        's': lambda: self.locateByTwoChars,
+        'S': lambda: self.locateBackwardByTwoChars,
         'd': (
           {
             'e': self.do('DeleteLineLeft'),
@@ -107,7 +107,7 @@ class Editor(EditorBase,
         'K': self.do(self.layout.north),
         'l': (self.do('CharRight'), self.do('CharRightExtend'), self.do('CharRightRectExtend')),
         'L': self.do(self.layout.east),
-        ';': lambda _: self.lastLocateFunc(None),
+        ';': lambda: self.lastLocateFunc(None),
 
         'z': {
             'z': self.do('VerticalCentreCaret'),
@@ -129,7 +129,7 @@ class Editor(EditorBase,
 
         ',': {
             'q': self.do(sys.exit),
-            't': lambda _: self.openRequested.emit(self.file_chooser.choose()),
+            't': lambda: self.openRequested.emit(self.file_chooser.choose()),
 
             's': self.do(self.layout.siblingSplit),
             'h': self.do((self.layout.split, QHBoxLayout)),
@@ -163,13 +163,13 @@ class Editor(EditorBase,
         Qt.Key_Right: self.do('CharRight'),
         Qt.Key_Up: self.do('LineUp'),
         Qt.Key_Down: self.do('LineDown'),
-        Qt.Key_Tab: lambda _: self.exe('Tab') if not self.completer.nextCandidate() else None,
+        Qt.Key_Tab: lambda: self.exe('Tab') if not self.completer.nextCandidate() else None,
         }
 
     self.modeCommand() # default mode
 
   def do(self, *cmds):
-    return lambda _: self.exe(*cmds)
+    return lambda: self.exe(*cmds)
 
   def setupNCommands(self):
     def make(i):
