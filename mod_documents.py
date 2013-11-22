@@ -23,10 +23,10 @@ class Documents(QObject):
     if index >= 0: # already opened
       self.switchByIndex(index)
     else: # open
-      f = open(path, 'r')
+      f = open(path, 'rb')
       doc = self.editor.send('sci_createdocument')
       self.editor.send('sci_setdocpointer', 0, doc)
-      self.editor.send('sci_settext', ctypes.create_string_buffer(f.read().encode('utf8')))
+      self.editor.send('sci_settext', f.read())
       self.documents.append(Document(path, doc))
       self.index = len(self.documents) - 1
     self.setupLexer(path)
