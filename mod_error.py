@@ -26,4 +26,5 @@ class ErrorHandler:
     y = parentSize.height() / 2 - rect.height() / 2
     self.errorLabel.move(x, y)
     self.errorLabel.show()
+    if self.timer: self.timer.stop()
     self.timer = QTimer.singleShot(3000, lambda: self.errorLabel.hide())

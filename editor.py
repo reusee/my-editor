@@ -15,6 +15,7 @@ from mod_relative_line_number import *
 from mod_documents import *
 from mod_layout import *
 from mod_error import *
+from mod_theme import *
 
 #   extra modules
 #   key bindings
@@ -27,6 +28,7 @@ class Editor(EditorBase,
 
   openRequested = pyqtSignal(str)
   cloned = pyqtSignal(QObject)
+  setThemeRequested = pyqtSignal()
 
   def __init__(self):
     super().__init__()
@@ -34,14 +36,21 @@ class Editor(EditorBase,
     self.n = 0
     self.active = False
 
+    self.setStyleSheet('''
+    Editor {
+      border: 0;
+    }
+    ''')
+
     # modules
     self.completer = Completer(self)
     self.status = Status(self)
     self.file_chooser = FileChooser(self)
-    self.relative_line_number = RelativeLineNumber(self, 0)
+    self.relative_line_number = RelativeLineNumber(self, 3)
     self.documents = Documents(self)
     self.layout = Layout(self)
     self.errorHandler = ErrorHandler(self)
+    self.theme = Theme(self)
 
     # key bindings
     self.commandModeKeys = {

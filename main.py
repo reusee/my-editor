@@ -15,7 +15,7 @@ class Main(QWidget):
         # root layout
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(0)
+        self.layout.setSpacing(1)
         self.setLayout(self.layout)
 
         # first editor

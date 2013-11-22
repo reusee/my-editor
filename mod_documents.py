@@ -23,20 +23,22 @@ class Documents(QObject):
     if index >= 0: # already opened
       self.switchByIndex(index)
     else: # open
-      f = open(path, 'rb')
+      try:
+        f = open(path, 'rb')
+      except IsADirectoryError:
+        return
       doc = self.editor.send('sci_createdocument')
       self.editor.send('sci_setdocpointer', 0, doc)
       self.editor.send('sci_settext', f.read())
       self.documents.append(Document(path, doc))
       self.index = len(self.documents) - 1
     self.setupLexer(path)
+    self.editor.setThemeRequested.emit()
 
   def setupLexer(self, path):
     if path.endswith('.py'): # lexer
       lexer = QsciLexerPython()
-      lexer.setDefaultFont(self.editor.font)
       self.editor.setLexer(lexer)
-      self.editor.send("sci_stylesetfont", 1, b'Terminus')
 
   def saveCurrent(self):
     if self.index >= 0:

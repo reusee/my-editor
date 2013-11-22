@@ -26,17 +26,11 @@ class FileChooser(QDialog):
     self.layout.addWidget(self.view)
     self.view.installEventFilter(self)
 
-    #parent.resized.connect(self.resized)
-    self.resize(800, 600)
-
   def exec_(self):
     self.edit.clear()
     self.edit.setFocus()
     self.updateList('')
     super().exec_()
-
-  def resized(self, ev):
-    self.resize(ev.size())
 
   def editPressed(self):
     if self.model.rowCount() == 0: return
