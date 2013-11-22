@@ -14,6 +14,7 @@ from mod_file_chooser import *
 from mod_relative_line_number import *
 from mod_documents import *
 from mod_layout import *
+from mod_error import *
 
 #   extra modules
 #   key bindings
@@ -33,9 +34,6 @@ class Editor(EditorBase,
     self.n = 0
     self.active = False
 
-    # error handling
-    self.errored.connect(lambda msg: print(msg)) # TODO
-
     # modules
     self.completer = Completer(self)
     self.status = Status(self)
@@ -43,6 +41,7 @@ class Editor(EditorBase,
     self.relative_line_number = RelativeLineNumber(self, 0)
     self.documents = Documents(self)
     self.layout = Layout(self)
+    self.errorHandler = ErrorHandler(self)
 
     # key bindings
     self.commandModeKeys = {
