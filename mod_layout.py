@@ -66,20 +66,24 @@ class Layout:
     for i, editor in enumerate(self.editors):
       if self.mapRect(editor).contains(p):
         self.switch(i)
-        return
+        return True
 
   def north(self):
     p = self.mapRect(self.editor).topLeft() + QPoint(0, -10)
-    self.iterAndSwitch(p)
+    if not self.iterAndSwitch(p):
+      self.south()
 
   def south(self):
     p = self.mapRect(self.editor).bottomLeft() + QPoint(0, 10)
-    self.iterAndSwitch(p)
+    if not self.iterAndSwitch(p):
+      self.north()
 
   def west(self):
     p = self.mapRect(self.editor).topLeft() + QPoint(-10, 0)
-    self.iterAndSwitch(p)
+    if not self.iterAndSwitch(p):
+      self.east()
 
   def east(self):
     p = self.mapRect(self.editor).topRight() + QPoint(10, 0)
-    self.iterAndSwitch(p)
+    if not self.iterAndSwitch(p):
+      self.west()
