@@ -1,5 +1,6 @@
 from PyQt5.Qsci import *
 from PyQt5.QtCore import *
+from PyQt5.QtGui import *
 import os
 import ctypes
 
@@ -34,6 +35,7 @@ class Documents(QObject):
       self.index = len(self.documents) - 1
     self.setupLexer(path)
     self.editor.setThemeRequested.emit()
+    self.editor.setMarginsBackgroundColor(QColor("#222222"))
 
   def setupLexer(self, path):
     if path.endswith('.py'): # lexer

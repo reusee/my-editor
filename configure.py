@@ -30,6 +30,3 @@ def configureEditor(self):
     self.setCaretLineVisible(True)
     self.setCaretLineBackgroundColor(QColor("#333333"))
     self.send('sci_setcaretlinevisiblealways', 1)
-
-    # color
-    self.setMarginsBackgroundColor(QColor("#222222"))
