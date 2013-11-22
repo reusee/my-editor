@@ -22,3 +22,4 @@ def configureEditor(self):
     self.setIndentationGuides(True)
     self.setAutoIndent(True)
     self.setBackspaceUnindents(True)
+    self.send('sci_setcaretlinevisiblealways', 1)

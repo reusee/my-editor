@@ -26,7 +26,8 @@ class FileChooser(QDialog):
     self.layout.addWidget(self.view)
     self.view.installEventFilter(self)
 
-    parent.resized.connect(self.resized)
+    #parent.resized.connect(self.resized)
+    self.resize(800, 600)
 
   def exec_(self):
     self.edit.clear()

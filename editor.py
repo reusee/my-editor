@@ -6,7 +6,6 @@ from editor_base import *
 from cmd_locate import *
 from cmd_newline import *
 from cmd_scroll import *
-from cmd_layout import *
 
 # modules
 from mod_status import *
@@ -14,6 +13,7 @@ from mod_completer import *
 from mod_file_chooser import *
 from mod_relative_line_number import *
 from mod_documents import *
+from mod_layout import *
 
 #   extra modules
 #   key bindings
@@ -22,13 +22,10 @@ class Editor(EditorBase,
     CmdLocate,
     CmdNewline,
     CmdScroll,
-    CmdLayout,
     ):
 
   openRequested = pyqtSignal(str)
   cloned = pyqtSignal(QObject)
-  nextEditorRequested = pyqtSignal(QObject)
-  prevEditorRequested = pyqtSignal(QObject)
 
   def __init__(self):
     super().__init__()
@@ -45,6 +42,7 @@ class Editor(EditorBase,
     self.file_chooser = FileChooser(self)
     self.relative_line_number = RelativeLineNumber(self, 0)
     self.documents = Documents(self)
+    self.layout = Layout(self)
 
     # key bindings
     self.commandModeKeys = {
@@ -119,13 +117,13 @@ class Editor(EditorBase,
         ',': {
             'q': self.do(sys.exit),
             't': lambda _: self.openRequested.emit(self.file_chooser.choose()),
-            's': {
-              's': self.do(self.siblingSplit),
-              'v': self.do((self.split, QVBoxLayout)),
-              'h': self.do((self.split, QHBoxLayout)),
-              'n': self.do((self.nextEditorRequested.emit, self)),
-              'p': self.do((self.prevEditorRequested.emit, self)),
-              },
+
+            's': self.do(self.layout.siblingSplit),
+            'h': self.do((self.layout.split, QHBoxLayout)),
+            'j': self.do(self.layout.next),
+            'k': self.do(self.layout.prev),
+
+            'v': self.do((self.layout.split, QVBoxLayout)),
           },
         }
     self.setupNCommands()
