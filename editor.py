@@ -136,6 +136,7 @@ class Editor(EditorBase,
             'j': self.do(self.layout.next),
             'k': self.do(self.layout.prev),
 
+            'z': self.do(self.layout.close),
             'v': self.do((self.layout.split, QVBoxLayout)),
           },
         }

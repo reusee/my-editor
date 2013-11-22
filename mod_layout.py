@@ -25,6 +25,7 @@ class Layout:
     index = self.layout.indexOf(self.editor)
     self.layout.insertWidget(index + 1, editor)
     editor.layout.layout = self.layout
+    editor.setFocus()
 
   def split(self, layoutClass):
     editor = self.editor.clone()
@@ -36,6 +37,7 @@ class Layout:
     self.layout.insertLayout(index, layout)
     editor.layout.layout = layout
     self.layout = layout
+    editor.setFocus()
 
   # switch
 
@@ -87,3 +89,12 @@ class Layout:
     p = self.mapRect(self.editor).topRight() + QPoint(10, 0)
     if not self.iterAndSwitch(p):
       self.west()
+
+  # close
+
+  def close(self):
+    if len(self.editors) == 1: return # do not close the only one editor
+    self.layout.removeWidget(self.editor)
+    self.editors.remove(self.editor)
+    self.editor.hide()
+    self.switch(0)
