@@ -25,12 +25,13 @@ class Documents(QObject):
       self.switchByIndex(index)
     else: # open
       try:
-        f = open(path, 'rb')
+        f = open(path, 'r')
       except IsADirectoryError:
         return
       doc = self.editor.send('sci_createdocument')
       self.editor.send('sci_setdocpointer', 0, doc)
-      self.editor.send('sci_settext', f.read())
+      text = f.read()
+      self.editor.setText(text)
       self.documents.append(Document(path, doc))
       self.index = len(self.documents) - 1
     self.setupLexer(path)
