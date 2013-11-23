@@ -106,7 +106,7 @@ class Editor(EditorBase,
         'K': self.do(self.layout.north),
         'l': (self.do('CharRight'), self.do('CharRightExtend'), self.do('CharRightRectExtend')),
         'L': self.do(self.layout.east),
-        ';': lambda: self.lastLocateFunc(None),
+        ';': lambda: self.lastLocateFunc(),
 
         'z': {
             'z': self.do('VerticalCentreCaret'),

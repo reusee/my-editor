@@ -9,7 +9,7 @@ class CmdLocate:
     def makeLocator(c):
       c = create_string_buffer(bytes(c, "utf8"))
       if backward:
-        def f(_):
+        def f():
           oldpos = self.getPos()
           self.send('sci_searchanchor')
           ret = self.send('sci_searchprev', self.base.SCFIND_MATCHCASE, c)
@@ -21,7 +21,7 @@ class CmdLocate:
             self.lastLocateFunc = f
         return f
       else:
-        def f(_):
+        def f():
           oldpos = self.getPos()
           self.exe('CharRight')
           self.send('sci_searchanchor')
@@ -41,7 +41,7 @@ class CmdLocate:
     c = ev.text()
     def next(ev):
       buf = create_string_buffer(bytes(c + ev.text(), "utf8"))
-      def f(_):
+      def f():
         oldpos = self.getPos()
         self.exe('CharRight')
         self.send('sci_searchanchor')
@@ -52,14 +52,14 @@ class CmdLocate:
           self.exe('CharLeft')
           self.send('sci_scrollcaret')
           self.lastLocateFunc = f
-      f(None)
+      f()
     return next
 
   def locateBackwardByTwoChars(self, ev):
     c = ev.text()
     def next(ev):
       buf = create_string_buffer(bytes(c + ev.text(), "utf8"))
-      def f(_):
+      def f():
         oldpos = self.getPos()
         self.exe('CharLeft')
         self.send('sci_searchanchor')
@@ -70,7 +70,7 @@ class CmdLocate:
           self.exe('CharLeft')
           self.send('sci_scrollcaret')
           self.lastLocateFunc = f
-      f(None)
+      f()
     return next
 
   def locateLine(self, n):
