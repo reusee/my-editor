@@ -43,7 +43,8 @@ class Completer(QWidget):
       return
     if self.editor.mode == self.editor.EDIT:
       if modType & self.editor.base.SC_MOD_INSERTTEXT: # insert by edit
-        if len(text) == 1 and self.isWordChar(text): # a word char
+        if self.isWordChar(text): # a word char
+          assert len(text) == 1 # typing
           assert not self.currentRange is None
           if self.currentRange.index != -1: # a dirty range
             self.newRange(position + 1)
