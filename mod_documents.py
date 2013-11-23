@@ -8,14 +8,13 @@ class Documents(QObject):
   def __init__(self, editor):
     super().__init__()
     self.editor = editor
-    editor.openRequested.connect(self.open)
     self.documents = []
     self.index = -1
     editor.cloned.connect(self.clone)
 
   def open(self, path):
     if not path: return
-    self.saveCurrent()
+    self.saveDocumentState()
     index = -1
     for i in range(len(self.documents)):
       if self.documents[i].path == path:
@@ -42,13 +41,13 @@ class Documents(QObject):
       lexer = QsciLexerPython()
       self.editor.setLexer(lexer)
 
-  def saveCurrent(self):
+  def saveDocumentState(self):
     if self.index >= 0:
       self.documents[self.index].pos = self.editor.getPos()
       self.documents[self.index].topLineNumber = self.editor.send('sci_getfirstvisibleline')
 
   def switchByIndex(self, index):
-    self.saveCurrent()
+    self.saveDocumentState()
     document = self.documents[index]
     self.editor.send('sci_setdocpointer', 0, document.pointer) # switch
     self.editor.send('sci_setcurrentpos', document.pos) # restore status
@@ -70,6 +69,11 @@ class Documents(QObject):
 
   def clone(self, editor):
     editor.documents.documents = self.documents
+
+  def save(self):
+    if self.index < 0: return
+    path = self.documents[self.index].path
+    print(path)
 
 class Document:
   def __init__(self, path, pointer):

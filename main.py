@@ -22,7 +22,7 @@ class Main(QWidget):
         self.editorLayout = QVBoxLayout()
         self.layout.addLayout(self.editorLayout)
         self.editor = Editor()
-        self.editor.layout.setup(self.editorLayout)
+        self.editor.layout.setup(self.editorLayout) #TODO 
         self.editor.active = True
 
         # exception handling

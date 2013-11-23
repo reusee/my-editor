@@ -26,7 +26,6 @@ class Editor(EditorBase,
     CmdScroll,
     ):
 
-  openRequested = pyqtSignal(str)
   cloned = pyqtSignal(QObject)
   setThemeRequested = pyqtSignal()
 
@@ -129,7 +128,7 @@ class Editor(EditorBase,
 
         ',': {
             'q': self.do(sys.exit),
-            't': lambda: self.openRequested.emit(self.file_chooser.choose()),
+            't': lambda: self.documents.open(self.file_chooser.choose()),
 
             's': self.do(self.layout.siblingSplit),
             'h': self.do((self.layout.split, QHBoxLayout)),
