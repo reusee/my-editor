@@ -3,6 +3,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 import os
 import ctypes
+import time
 
 class Documents(QObject):
   def __init__(self, editor):
@@ -35,6 +36,7 @@ class Documents(QObject):
     self.setupLexer(path)
     self.editor.setThemeRequested.emit()
     self.editor.setMarginsBackgroundColor(QColor("#222222"))
+    self.editor.send('sci_emptyundobuffer')
 
   def setupLexer(self, path):
     if path.endswith('.py'): # lexer
@@ -72,8 +74,16 @@ class Documents(QObject):
 
   def save(self):
     if self.index < 0: return
+    if not self.editor.send('sci_getmodify'): return
     path = self.documents[self.index].path
-    print(path)
+    tmpPath = path + '.' + str(time.time())
+    with open(tmpPath, 'wb+') as out:
+      length = self.editor.send('sci_getlength')
+      buf = bytearray(length + 1)
+      self.editor.send('sci_gettext', length + 1, buf)
+      out.write(buf[:length])
+    os.rename(tmpPath, path)
+    self.editor.send('sci_setsavepoint')
 
 class Document:
   def __init__(self, path, pointer):

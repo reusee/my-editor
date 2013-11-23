@@ -18,6 +18,8 @@ class Status(QWidget):
 
   def paintEvent(self, ev):
     painter = QPainter(self)
+
+    # command
     painter.setPen(QPen(QColor("#F58220")))
     font = QFont('Times', 32)
     painter.setFont(font)
@@ -29,6 +31,11 @@ class Status(QWidget):
     if y + rect.height() > self.height():
       y -= rect.height()
     painter.drawText(QPoint(x, y), self.commandText)
+
+    # modify 
+    if self.editor.send('sci_getmodify'):
+      painter.setPen(QPen(QColor(0xFF, 0xFF, 0xFF, 128)))
+      painter.drawText(QPoint(self.width() / 2, self.height() / 2), "Modified")
 
   def appendCommandText(self, t):
     self.commandText += t

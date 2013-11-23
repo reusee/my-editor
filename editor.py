@@ -128,6 +128,7 @@ class Editor(EditorBase,
 
         ',': {
             'q': self.do(sys.exit),
+            'w': self.do(self.documents.save),
             't': lambda: self.documents.open(self.file_chooser.choose()),
 
             's': self.do(self.layout.siblingSplit),
