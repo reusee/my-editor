@@ -5,7 +5,6 @@ from PyQt5.QtWidgets import *
 
 def configureEditor(self):
     self.standardCommands().clearKeys() # clear default key bindings
-    self.setUtf8(True) # use utf8
     self.setMarginWidth(1, 0) # hide non-folding symbols
     self.setBraceMatching(QsciScintilla.SloppyBraceMatch)
     self.send('sci_setmousedowncaptures', 0)
