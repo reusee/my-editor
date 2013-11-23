@@ -42,6 +42,10 @@ class Documents(QObject):
     if path.endswith('.py'): # lexer
       lexer = QsciLexerPython()
       self.editor.setLexer(lexer)
+    else:
+      self.editor.send('sci_stylesetback', self.editor.base.STYLE_DEFAULT, 0x000000)
+      self.editor.send('sci_stylesetfore', self.editor.base.STYLE_DEFAULT, 0x000000)
+      self.editor.send('sci_styleclearall')
 
   def saveDocumentState(self):
     if self.index >= 0:

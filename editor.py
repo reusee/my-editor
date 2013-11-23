@@ -130,6 +130,7 @@ class Editor(EditorBase,
             'q': self.do(sys.exit),
             'w': self.do(self.documents.save),
             't': lambda: self.documents.open(self.file_chooser.choose()),
+            'p': lambda: print(self.send('sci_getstyleat', self.getPos())),
 
             's': self.do(self.layout.siblingSplit),
             'h': self.do((self.layout.split, QHBoxLayout)),
