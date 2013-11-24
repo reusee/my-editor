@@ -35,6 +35,8 @@ class Main(QWidget):
         self.layout.addWidget(self.exceptionBoard)
         self.exceptionBoard.hide()
 
+        self.resize(self.size())
+
     def excepthook(self, type, value, tback):
         self.exceptionBoard.setText('\n'.join(traceback.format_exception(type, value, tback)))
         self.exceptionBoard.show()
