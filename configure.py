@@ -8,6 +8,7 @@ def configureEditor(self):
     self.setMarginWidth(1, 0) # hide non-folding symbols
     self.setBraceMatching(QsciScintilla.SloppyBraceMatch)
     self.send('sci_setmousedowncaptures', 0)
+    self.setUtf8(True)
 
     # tab and identation
     self.setTabWidth(2) # tabs
