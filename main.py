@@ -25,6 +25,10 @@ class Main(QWidget):
         self.editor.layout.setup(self.editorLayout) #TODO 
         self.editor.active = True
 
+        # load files
+        for filename in sys.argv[1:]:
+            self.editor.documents.open(filename)
+
         # exception handling
         sys.excepthook = self.excepthook
         self.exceptionBoard = ExceptionBoard()

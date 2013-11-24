@@ -15,6 +15,7 @@ class Documents(QObject):
 
   def open(self, path):
     if not path: return
+    path = os.path.abspath(path)
     self.saveDocumentState()
     index = -1
     for i in range(len(self.documents)):
