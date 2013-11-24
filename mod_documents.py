@@ -12,6 +12,7 @@ class Documents(QObject):
     self.documents = []
     self.index = -1
     editor.cloned.connect(self.clone)
+    self.currentLexer = None
 
   def open(self, path):
     if not path: return
@@ -41,6 +42,7 @@ class Documents(QObject):
     self.editor.send('sci_emptyundobuffer')
 
   def setupLexer(self, path):
+    lexer = None
     if path.endswith('.py'): # lexer
       lexer = QsciLexerPython()
       self.editor.setLexer(lexer)
@@ -48,11 +50,14 @@ class Documents(QObject):
       self.editor.send('sci_stylesetback', self.editor.base.STYLE_DEFAULT, 0x000000)
       self.editor.send('sci_stylesetfore', self.editor.base.STYLE_DEFAULT, 0x000000)
       self.editor.send('sci_styleclearall')
+    self.currentLexer = lexer
 
   def saveDocumentState(self):
     if self.index >= 0:
-      self.documents[self.index].pos = self.editor.getPos()
-      self.documents[self.index].topLineNumber = self.editor.send('sci_getfirstvisibleline')
+      document = self.documents[self.index]
+      document.pos = self.editor.getPos()
+      document.topLineNumber = self.editor.send('sci_getfirstvisibleline')
+      document.lexer = self.currentLexer
 
   def switchByIndex(self, index):
     self.saveDocumentState()
@@ -62,6 +67,9 @@ class Documents(QObject):
     self.editor.send('sci_setsel', -1, self.editor.getPos())
     self.editor.send('sci_linescroll', 0, document.topLineNumber - self.editor.send('sci_getfirstvisibleline'))
     self.index = index
+    if document.lexer:
+      self.editor.setLexer(document.lexer)
+      self.editor.setThemeRequested.emit()
 
   def nextDocument(self):
     index = self.index + 1
@@ -97,3 +105,4 @@ class Document:
     self.pointer = pointer
     self.pos = 0
     self.topLineNumber = 0
+    self.lexer = None
